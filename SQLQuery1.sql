@@ -130,3 +130,141 @@ select * from Orders
 select * from Order_Assignments
 
 
+
+
+go --TASK CREATION
+create procedure new_task
+    @title VARCHAR(255),
+    @description TEXT,
+    @deadline DATE,
+    @priority VARCHAR(20),
+    @status VARCHAR(20) = 'Pending',
+    @admin_id INT,
+    @employee_email VARCHAR(100)
+as
+
+begin
+    declare @employee_id INT; -- finding employee id by email
+    
+    select @employee_id = E.employee_id
+    from Employees E
+    join PersonnelInfo P ON E.infoID = P.infoID
+    where P.email = @employee_email;
+   
+   
+    if @employee_id IS NULL  -- If employee does not exist
+    begin
+        print 'Error: Employee not found';
+        return;
+    end
+    
+    declare @order_id INT;
+    insert into Orders (title, [description], [status], [priority], created_at, deadline, admin_id)
+    values (@title, @description, @status, @priority, DEFAULT, @deadline, @admin_id);
+    
+    set @order_id = SCOPE_IDENTITY();
+    
+    insert into Order_Assignments (order_id, employee_id, assigned_at, completed_at)
+    values (@order_id, @employee_id, DEFAULT, NULL);
+    
+    PRINT 'DONE';
+end;
+go
+
+--exec new_task @title = 'Bug Fixing',  @description = 'Fix login authentication issue',  @deadline = '2025-04-15',
+--@priority = 'High', @status = 'Pending', @admin_id = 2, @employee_email = 'zainab.iqbal@fast.edu.pk'
+
+go --update the task 
+create procedure update_status
+    @new_status varchar(20),
+    @orderID int
+AS
+begin
+    declare @findingID int;
+
+    select @findingID = order_id from Orders where order_id = @orderID;
+
+    if @findingID IS NULL
+    begin
+        print 'Order ID is not found';
+        return; --
+    end
+
+    update Orders
+    set [status] = @new_status
+    where order_id = @orderID;
+
+    print 'Order status updated successfully';
+end
+go
+--exec update_status 'mood' ,4
+
+create procedure update_priorty
+	@new_priorty varchar(20),
+	@order_id int
+as
+begin
+declare @findingID int;
+
+    select @findingID = order_id from Orders where order_id = @order_id;
+
+    if @findingID IS NULL
+    begin
+        print 'Order ID is not found';
+        return; 
+    end
+
+    update Orders
+    set [priority] = @new_priorty
+    where order_id = @order_id;
+
+    print 'Order priorty updated successfully';
+end;
+--exec update_priorty 'High', 2
+
+go
+-- retrieving tasks based on status , deadline , assigned members
+
+create procedure status_search
+	@Sstatus varchar(20)
+
+as
+begin
+	select *
+	from Orders
+	where [status] = @Sstatus
+end
+
+--exec status_search 'Completed'
+
+go
+create procedure date_search
+	@Ddate date
+
+as
+begin
+	select *
+	from Orders
+	where [deadline] = @Ddate
+
+end;
+
+--exec date_search '2025-04-10'
+
+go
+create procedure employee_search
+	@e_id INT
+AS
+begin 
+	select O.*
+	from Orders O
+	join Order_Assignments os on  os.order_id = o.order_id
+	where os.employee_id = @e_id
+end
+
+--exec employee_search 1 
+
+
+
+
+
