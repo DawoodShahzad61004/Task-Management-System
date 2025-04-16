@@ -1,52 +1,125 @@
-const Task = require('../models/taskModel');
+const taskModel = require('../models/taskModel');
 
-exports.getAllTasks = async (req, res) => {
+exports.login = async (req, res) => {
   try {
-    const tasks = await Task.getAllTasks();
-    res.json(tasks);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
-exports.getTaskById = async (req, res) => {
-  try {
-    const task = await Task.getTaskById(req.params.id);
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-    res.json(task);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-};
-
-
-exports.createTask = async (req, res) => {
-    try {
-      const { title, description} = req.body;
-      await Task.createTask(title, description);
-      res.status(201).json({ message: 'Task created using stored procedure' });
-    } catch (error) {
-      console.error("Error creating task:", error);
-      res.status(500).json({ error: 'Internal Server Error' });
+    const { email, password } = req.body;
+    const result = await taskModel.login(email, password);
+    if (result) {
+      global.loggedInUser = result.userId;
     }
-  };
-  
-
-exports.updateTask = async (req, res) => {
-  try {
-    const { title, description } = req.body;
-    await Task.updateTask(req.params.id, title, description);
-    res.json({ message: 'Task updated' });
+    res.status(200).json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error in login:', error);
+    res.status(500).json({ error: 'Login failed' });
   }
 };
 
-exports.deleteTask = async (req, res) => {
+exports.newTask = async (req, res) => {
   try {
-    await Task.deleteTask(req.params.id);
-    res.json({ message: 'Task deleted' });
+    const { title, description, assignedTo, priority, dueDate } = req.body;
+    const result = await taskModel.newTask(title, description, assignedTo, priority, dueDate);
+    res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error in newTask:', error);
+    res.status(500).json({ error: 'Failed to create new task' });
+  }
+};
+
+exports.updateStatus = async (req, res) => {
+  try {
+    const { taskId, status } = req.body;
+    const result = await taskModel.updateStatus(taskId, status);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in updateStatus:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+};
+
+exports.updatePriority = async (req, res) => {
+  try {
+    const { taskId, priority } = req.body;
+    const result = await taskModel.updatePriority(taskId, priority);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in updatePriority:', error);
+    res.status(500).json({ error: 'Failed to update priority' });
+  }
+};
+
+exports.statusSearch = async (req, res) => {
+  try {
+    const { status } = req.query;
+    const result = await taskModel.statusSearch(status);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in statusSearch:', error);
+    res.status(500).json({ error: 'Failed to search by status' });
+  }
+};
+
+exports.dateSearch = async (req, res) => {
+  try {
+    const { toDate } = req.query;
+    const result = await taskModel.dateSearch(toDate);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in dateSearch:', error);
+    res.status(500).json({ error: 'Failed to search by date' });
+  }
+};
+
+exports.employeeSearch = async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+    const result = await taskModel.employeeSearch(parseInt(employeeId));
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in employeeSearch:', error);
+    res.status(500).json({ error: 'Failed to search by employee' });
+  }
+};
+
+exports.empUpdateStatus = async (req, res) => {
+  try {
+    const { taskId, status } = req.body;
+    const result = await taskModel.empUpdateStatus(taskId, status);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in empUpdateStatus:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+};
+
+exports.empStatusSearch = async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+    const result = await taskModel.empStatusSearch(parseInt(employeeId));
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in empStatusSearch:', error);
+    res.status(500).json({ error: 'Failed to search employee tasks by status' });
+  }
+};
+
+exports.empPStatusSearch = async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+    const result = await taskModel.empPStatusSearch(parseInt(employeeId));
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in empPStatusSearch:', error);
+    res.status(500).json({ error: 'Failed to search employee tasks by partial status' });
+  }
+};
+
+exports.acpDecStatus = async (req, res) => {
+  try {
+    const { taskId, decision } = req.body;
+    const result = await taskModel.acpDecStatus(taskId, decision);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in acpDecStatus:', error);
+    res.status(500).json({ error: 'Failed to process decision' });
   }
 };

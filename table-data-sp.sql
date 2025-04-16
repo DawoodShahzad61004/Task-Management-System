@@ -1,3 +1,5 @@
+create database taskDb
+use taskDb
 CREATE TABLE Tasks (
     id INT IDENTITY(1,1) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,

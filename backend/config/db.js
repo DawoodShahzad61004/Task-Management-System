@@ -1,6 +1,8 @@
 require('dotenv').config();
 const sql = require('mssql');
 
+console.log("Loaded from ENV:", process.env.DB_USER, process.env.DB_SERVER);
+
 
 // Database configuration
 const dbConfig = {
@@ -10,7 +12,7 @@ const dbConfig = {
   database: process.env.DB_NAME,
   // port: 1433, 
   options: {
-    encrypt: false, // Set to true if using Azure
+    encrypt: false,
     enableArithAbort: true,
     trustServerCertificate: true,
   },
