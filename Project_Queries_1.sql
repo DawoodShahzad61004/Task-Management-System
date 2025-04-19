@@ -138,7 +138,13 @@ select * from Employees
 select * from Orders
 select * from Order_Assignments
 
-
+select * from Admins join PersonnelInfo on Admins.infoID = PersonnelInfo.infoID
+select * from Employees 
+join PersonnelInfo on Employees.infoID = PersonnelInfo.infoID 
+join Order_Assignments on Employees.employee_id = Order_Assignments.employee_id
+join Orders on Order_Assignments.order_id = Orders.order_id
+--group by Orders.order_id
+order by Employees.employee_id
 
 
 go -- login
@@ -146,53 +152,36 @@ go -- login
 create procedure login
     @email VARCHAR(100),
     @password VARCHAR(255)
-    --@userID INT OUTPUT,    -- infoID from PersonnelInfo
-    --@role VARCHAR(20) OUTPUT, -- 'Admin' or 'Employee'
-    --@roleID INT OUTPUT     -- EmployeeID or AdminID
 AS
 BEGIN
-    -- checking if user exists or not
-	declare @userID INT; -- infoID from PersonnelInfo
+	declare @userID INT;
 	declare @roleID INT;
-    select @userID = infoID
-    from PersonnelInfo
+    select @userID = infoID from PersonnelInfo
     where email = @email AND password_hash = @password;
 
     if @userID IS NULL
     begin
-        print 'Incorrect email or password. Access denied.';
-        --SET @role = 'None';
-        SET @roleID = -1;  -- Indicate failure
+        SET @roleID = -1;
+		select @roleID as RoleID;
         RETURN;
     end 
 
-    -- Step 2: Check if the user is an Admin
     select @roleID = admin_id FROM Admins WHERE infoID = @userID;
     if @roleID IS NOT NULL
     begin
-        --SET @role = 'Admin';
-        print 'Admin logged in successfully';
+        select @roleID as RoleID;
         RETURN;
     end
 
-    -- Step 3: Check if the user is an Employee
     select @roleID = employee_id FROM Employees WHERE infoID = @userID;
     if @roleID IS NOT NULL
     begin
-        
-        print 'Employee logged in successfully';
+        select @roleID as RoleID;
         RETURN;
     end
 
 end
 GO
-
-declare @userID INT, @roleID INT;
-
-EXEC login 
-    @email = 'ali.raza@fast.edu.pk',  @password = 'hashed_pw1', @userID = @userID OUTPUT,  @roleID = @roleID OUTPUT;
-	select @userID AS UserInfoID, @roleID AS RoleID; -- here role id is either employee id or admin id
-
 
 
 go --TASK CREATION
@@ -218,24 +207,28 @@ begin
    
     if @employee_id IS NULL  -- If employee does not exist
     begin
-        print 'Error: Employee not found';
-        return;
+        return -1;
     end
     
-    declare @order_id INT;
-    insert into Orders (title, [description], [status], [priority], created_at, deadline, admin_id)
-    values (@title, @description, @status, @priority, DEFAULT, @deadline, @admin_id);
-    
-    set @order_id = SCOPE_IDENTITY();
-    
-    insert into Order_Assignments (order_id, employee_id, assigned_at, completed_at)
-    values (@order_id, @employee_id, DEFAULT, NULL);
-    
-    PRINT 'DONE';
+	begin try
+		declare @order_id INT;
+		insert into Orders (title, [description], [status], [priority], created_at, deadline, admin_id)
+		values (@title, @description, @status, @priority, DEFAULT, @deadline, @admin_id);
+		
+		set @order_id = SCOPE_IDENTITY();
+		
+		insert into Order_Assignments (order_id, employee_id, assigned_at, completed_at)
+		values (@order_id, @employee_id, DEFAULT, NULL);
+		return 1;
+	end try
+	begin catch
+		print 'Error occurred while creating task.';
+		return 0;
+	end catch
 end;
 go
---exec new_task @title = 'Bug Fixing',  @description = 'Fix login authentication issue',  @deadline = '2025-04-15',
---@priority = 'High', @status = 'Pending', @admin_id = 2, @employee_email = 'zainab.iqbal@fast.edu.pk'
+
+exec new_task 'Test Task 1.0', 'Description 1.0', '2025-05-10', 'High', 'Pending', 4, 'bilal.hassan@fast.edu.pk'
 
 go --update the task 
 create procedure update_status
@@ -251,11 +244,13 @@ begin
 	if @assigned_admin is null
 	begin
 	print 'Order id is not found'
+	return -1;
 	end
 
 	 if @assigned_admin <> @adminID
 	 begin
 	 print 'Access Denied: You can only update orders assigned by you.';
+	 return 0;
 	 end
 
 
@@ -264,17 +259,14 @@ begin
     where order_id = @orderID;
 
     print 'Order status updated successfully';
+	return 1;
 end
 
 go
 
-exec update_status  @adminID = 2,   @orderID = 1,  @new_status = 'Completed';
-
-go
-
-create procedure update_priorty
+create procedure update_priority
 	@adminID int,
-	@new_priorty varchar(20),
+	@new_priority varchar(20),
 	@order_id int
 as
 begin
@@ -285,20 +277,29 @@ begin
 	if @assigned_admin is null
 	begin
 	print 'Order id is not found'
+	return -1;
+	end
+
+	 if @new_priority not in ('Low', 'Medium', 'High')
+	 begin
+	 print 'Invalid priority value. It should be Low, Medium or High.';
+	 return -2;
 	end
 
 	 if @assigned_admin <> @adminID
 	 begin
 	 print 'Access Denied: You can only update priority of orders assigned by you.';
+	 return 9;
 	 end
 
     update Orders
-    set [priority] = @new_priorty
+    set [priority] = @new_priority
     where order_id = @order_id;
 
-    print 'Order priorty updated successfully';
+    print 'Order priority updated successfully';
+	return 1;
 end;
-exec update_priorty 1, 'Low', 1
+exec update_priority 1, 'Low', 1
 
 go
 
@@ -309,14 +310,14 @@ create procedure status_search
 	@adminID INT
 as
 begin
-	
-
+	IF @@NESTLEVEL > 1
+    RETURN;
 	select *
 	from Orders
-	where [status] = @Sstatus AND admin_id = @adminID
+	where [status] = @Sstatus
 end
 
-exec status_search 'Completed' , 1
+exec status_search 'Pending' , 1
 
 go
 
@@ -327,7 +328,7 @@ as
 begin
 	select *
 	from Orders
-	where [deadline] = @Ddate and admin_id = @adminID
+	where [deadline] = @Ddate
 
 end;
 
@@ -336,14 +337,14 @@ end;
 go
 --searching by admin based on assigned members
 create procedure employee_search
-	@e_id INT,
+	@employee_ID INT,
 	@adminID INT
 AS
 begin 
 	select O.*
 	from Orders O
 	join Order_Assignments os on  os.order_id = o.order_id
-	where os.employee_id = @e_id AND o.admin_id = @adminID
+	where os.employee_id = @employee_ID
 end
 
 exec employee_search 1 , 1
@@ -357,7 +358,7 @@ GO
 
 -- employee updated status of task
 create procedure Emp_update_status
-	@eID int,
+	@employeeId int,
     @new_status varchar(20),
     @orderID int
 AS
@@ -369,14 +370,20 @@ begin
 	if @assigned_emp is null
 	begin
 	print 'Order id is not found'
-	return;
+	return -1;
 	end
 
-	 if @assigned_emp <> @eID
-	 begin
-	 print 'Access Denied: You can only update orders assigned to you.';
-	 return;
-	 end
+	if @new_status not in ('Pending', 'In Progress', 'Completed', 'Cancelled')
+	begin
+	print 'Invalid status value. It should be In Pending, Progress, Completed or Cancelled.';
+	return -2;
+	end
+
+	if @assigned_emp <> @employeeId
+	begin
+	print 'Access Denied: You can only update orders assigned to you.';
+ 	return 0;
+	end
 
 
     update Orders
@@ -384,15 +391,14 @@ begin
     where order_id = @orderID;
 
     print 'Order status updated successfully';
+	return 1;
 end
 
-go
-
---exec Emp_update_status  @eID = 1,   @orderID = 1,  @new_status = 'In progress';
+exec Emp_update_status 2, 'Completed', 1
 
 go -- in progress status
 create procedure Emp_status_search
-	@eID INT
+	@employeeId INT
 as
 begin
 	
@@ -400,7 +406,7 @@ begin
 	select O.*
 	from Orders O
 	join Order_Assignments os on os.order_id = O.order_id
-	where O.[status] = 'In progress' AND os.employee_id = @eID
+	where O.[status] = 'In progress' AND os.employee_id = @employeeId
 
 end
 
@@ -409,7 +415,7 @@ exec Emp_status_search @eID = 1
 go
 -- pending status
 create procedure Emp_Pstatus_search
-	@eID INT
+	@employeeId INT
 as
 begin
 	
@@ -417,15 +423,14 @@ begin
 	select O.*
 	from Orders O
 	join Order_Assignments os on os.order_id = O.order_id
-	where O.[status] = 'Pending' AND os.employee_id = @eID
+	where O.[status] = 'Pending' AND os.employee_id = @employeeId
 
 end
 
-exec Emp_Pstatus_search @eID = 1
 
 go--accepting or declining functionality
 create procedure acp_dec_status
-	@eID int,
+	@employeeID int,
     @orderID int,
 
 	@claim varchar(20)
@@ -438,36 +443,55 @@ begin
 	if @assigned_emp is null
 	begin
 	print 'Order id is not found'
-	return;
+	return -1;
 	end
 
-	 if @assigned_emp <> @eID
+	 if @assigned_emp <> @employeeID
 	 begin
 	 print 'Access Denied: You can only update orders assigned to you.';
-	 return;
+	 return -2;
 	 end
 
-	 if @claim = 'Accept'
+	 IF LOWER(@claim) not in ('accept', 'decline')
+	 begin
+	 print 'Invalid claim value. It should be Accept or Decline.';
+	 return -3;
+	 end
+
+	 IF LOWER(@claim) = 'accept'
 	 begin
 	 update Orders
      set [status] = 'In Progress'
      where order_id = @orderID;
-	 return;
+	 return 1;
 	 end
-	 if @claim = 'Decline'
+	 IF LOWER(@claim) = 'decline'
 	 begin
 	 update Orders
      set [status] = 'Pending'
      where order_id = @orderID;
-	 return;
+	 return 1;
 	 end
 
-    
-
-    print 'Order status updated successfully';
+    print 'Decision updated successfully';
 end
 
-go
 
+CREATE PROCEDURE CheckUserRole
+    @userId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
 
---exec acp_dec_status  @eID = 1,   @orderID = 1, @claim = 'Decline'
+    IF EXISTS (SELECT 1 FROM Admins WHERE infoID = @userId)
+    BEGIN
+        RETURN 1;
+    END
+
+    IF EXISTS (SELECT 1 FROM Employees WHERE infoID = @userId)
+    BEGIN
+        RETURN 0;
+    END
+
+    RETURN -1;
+END

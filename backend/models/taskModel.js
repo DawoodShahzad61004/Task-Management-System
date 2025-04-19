@@ -10,30 +10,64 @@ exports.login = async (username, password) => {
       .input('email', sql.NVarChar, username)
       .input('password', sql.NVarChar, password)
       .execute('login');
-    return result.recordset;
+      console.log('Stored procedure result:', result);
+      return result.recordset[0].RoleID;
   } catch (err) {
     console.error('Error in login:', err);
     throw err;
   }
 };
 
-// Create a new task
-exports.newTask = async (title, description, assignedTo, priority, dueDate) => {
+exports.checkUser = async (userId) => {
   try {
     const pool = await poolPromise;
-    const assignedBy = global.loggedInUser; // Use the global variable for assignedBy
-    if (!assignedBy) {
-      throw new Error('User not logged in');
+    const request = pool.request();
+
+    request.input('userId', sql.Int, userId);
+
+    const result = await request.execute('CheckUserRole');
+
+    console.log('Stored procedure return value:', result.returnValue);
+
+    return result.returnValue; // Can be 1 (admin), 0 (employee), -1 (not found)
+  } catch (error) {
+    console.error('Error in checkUser:', error);
+    throw error;
+  }
+};
+
+
+// Create a new task
+exports.newTask = async (title, description, dueDate, priority, assignedTo) => {
+  try {
+    const pool = await poolPromise;
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
-    await pool.request()
-      .input('title', sql.NVarChar, title)
-      .input('description', sql.NVarChar, description)
-      .input('dueDate', sql.Date, dueDate)
-      .input('priority', sql.NVarChar, priority)
-      .input('assignedBy', sql.Int, assignedBy) 
-      .input('assignedTo', sql.Int, assignedTo)
+    console.log('Parameters passed to new_task stored procedure:', {
+      title,
+      description,
+      dueDate,
+      priority,
+      status: 'Pending',
+      loggedInUser: global.loggedInUser,
+      employee_email: assignedTo
+    });
+    const result = await pool.request()
+      .input('title', sql.VarChar, title)
+      .input('description', sql.VarChar, description)
+      .input('deadline', sql.Date, dueDate)
+      .input('priority', sql.VarChar, priority)
+      .input('status', sql.VarChar, 'Pending') // Default status
+      .input('admin_id', sql.Int, global.loggedInUser) 
+      .input('employee_email', sql.VarChar, assignedTo)
       .execute('new_task');
-    return { message: 'Task created successfully' };
+    if (result.returnValue == 1) {
+      return { message: 'Task created successfully' };
+    }
+    console.log('Stored procedure result:', result);
+    return { message: 'Task creation failed - No such employee exists' };
   } catch (err) {
     console.error('Error in newTask:', err);
     throw err;
@@ -44,16 +78,24 @@ exports.newTask = async (title, description, assignedTo, priority, dueDate) => {
 exports.updateStatus = async (taskId, status) => {
   try {
     const pool = await poolPromise;
-    const adminId = global.loggedInUser; // Use the global variable
-    if (!adminId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
-    await pool.request()
-      .input('adminId', sql.Int, adminId)
-      .input('status', sql.NVarChar, status)
-      .input('taskId', sql.Int, taskId)
+    const result = await pool.request()
+      .input('adminId', sql.Int, global.loggedInUser)
+      .input('new_status', sql.VarChar, status)
+      .input('orderID', sql.Int, taskId)
       .execute('update_status');
-    return { message: 'Status updated successfully' };
+    if (result.returnValue == 1) {
+      return { message: 'Status updated successfully' };
+    }
+    else if (result.returnValue == -1) {
+      return { message: 'Order id is not found' };
+    }
+    else if (result.returnValue == 0) {
+      return { message: 'Access Denied: You can only update orders assigned by you.' };
+    }
   } catch (err) {
     console.error('Error in updateStatus:', err);
     throw err;
@@ -64,16 +106,28 @@ exports.updateStatus = async (taskId, status) => {
 exports.updatePriority = async (taskId, priority) => {
   try {
     const pool = await poolPromise;
-    const adminId = global.loggedInUser; // Use the global variable
-    if (!adminId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
-    await pool.request()
-      .input('adminId', sql.Int, adminId)
-      .input('priority', sql.NVarChar, priority)
-      .input('taskId', sql.Int, taskId)
-      .execute('update_priorty');
-    return { message: 'Priority updated successfully' };
+    console.log('Parameters passed to update_priority stored procedure:', {
+      loggedInUser: global.loggedInUser,
+      new_priority: priority,
+      order_id: taskId
+    });
+    const result = await pool.request()
+      .input('adminId', sql.Int, global.loggedInUser)
+      .input('new_priority', sql.VarChar, priority)
+      .input('order_id', sql.Int, taskId)
+      .execute('update_priority');
+    if (result.returnValue == 1)
+      return { message: 'Priority updated successfully' };
+    else if (result.returnValue == -1)
+      return { message: 'Order id is not found' };
+    else if (result.returnValue == 0)
+      return { message: 'Access Denied: You can only update orders assigned by you.' };
+    else if (result.returnValue == -2)
+      return { message: 'Invalid priority' };
   } catch (err) {
     console.error('Error in updatePriority:', err);
     throw err;
@@ -84,13 +138,17 @@ exports.updatePriority = async (taskId, priority) => {
 exports.statusSearch = async (status) => {
   try {
     const pool = await poolPromise;
-    const adminId = global.loggedInUser; // Use the global variable
-    if (!adminId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
+    console.log('Parameters passed to status_search stored procedure:', {
+      loggedInUser: global.loggedInUser,
+      Sstatus: status
+    });
     const result = await pool.request()
-      .input('status', sql.NVarChar, status)
-      .input('adminId', sql.Int, adminId)
+      .input('adminId', sql.Int, global.loggedInUser)
+      .input('Sstatus', sql.VarChar, status)
       .execute('status_search');
     return result.recordset;
   } catch (err) {
@@ -103,15 +161,16 @@ exports.statusSearch = async (status) => {
 exports.dateSearch = async (toDate) => {
   try {
     const pool = await poolPromise;
-    const adminId = global.loggedInUser; // Use the global variable
-    if (!adminId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
     const result = await pool.request()
-      .input('toDate', sql.Date, toDate)
-      .input('adminId', sql.Int, adminId)
+      .input('Ddate', sql.Date, toDate)
+      .input('adminID', sql.Int, global.loggedInUser)
       .execute('date_search');
-    return result.recordset;
+      console.log('Stored procedure result:', result);
+      return result.recordset;
   } catch (err) {
     console.error('Error in dateSearch:', err);
     throw err;
@@ -122,13 +181,13 @@ exports.dateSearch = async (toDate) => {
 exports.employeeSearch = async (employeeId) => {
   try {
     const pool = await poolPromise;
-    const adminId = global.loggedInUser; // Use the global variable
-    if (!assignedBy) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 1) {
+      throw new Error('Not Logged-in as Admin');
     }
     const result = await pool.request()
-      .input('employeeId', sql.Int, employeeId)
-      .input('adminId', sql.Int, adminId) 
+      .input('employee_ID', sql.Int, employeeId)
+      .input('adminID', sql.Int, global.loggedInUser) 
       .execute('employee_search');
     return result.recordset;
   } catch (err) {
@@ -141,16 +200,30 @@ exports.employeeSearch = async (employeeId) => {
 exports.empUpdateStatus = async (taskId, status) => {
   try {
     const pool = await poolPromise;
-    const employeeId = global.loggedInUser; // Use the global variable
-    if (!employeeId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 0) {
+      throw new Error('Not Logged-in as Employee');
     }
-    await pool.request()
-      .input('employeeId', sql.Int, employeeId) // Use the global variable for employeeId
-      .input('status', sql.NVarChar, status)
-      .input('taskId', sql.Int, taskId)
+    const result = await pool.request()
+      .input('employeeId', sql.Int, global.loggedInUser) // Use the global variable for employeeId
+      .input('new_status', sql.VarChar, status)
+      .input('orderID', sql.Int, taskId)
       .execute('Emp_update_status');
-    return { message: 'Employee status updated successfully' };
+    console.log('Parameters passed to Emp_update_status stored procedure:', {
+      loggedInUser: global.loggedInUser,
+      new_status: status,
+      orderID: taskId
+    });
+    console.log('Stored procedure result:', result);
+    
+    if (result.returnValue == 1)
+      return { message: 'Order status updated successfully' };
+    else if (result.returnValue == -1)
+      return { message: 'Order id is not found' };
+    else if (result.returnValue == 0)
+      return { message: 'Access Denied: You can only update orders assigned to you.' };
+    else if (result.returnValue == -2)
+      return { message: 'Invalid status value. It should be In Pending, Progress, Completed or Cancelled.' };
   } catch (err) {
     console.error('Error in empUpdateStatus:', err);
     throw err;
@@ -158,12 +231,17 @@ exports.empUpdateStatus = async (taskId, status) => {
 };
 
 // Employee task search by status = 'In Progress'
-exports.empStatusSearch = async (employeeId) => {
+exports.empStatusSearch = async () => {
   try {
     const pool = await poolPromise;
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 0) {
+      throw new Error('Not Logged-in as Employee');
+    }
     const result = await pool.request()
-      .input('employeeId', sql.Int, employeeId)
+      .input('employeeId', sql.Int, global.loggedInUser)
       .execute('Emp_status_search');
+    console.log(result);
     return result.recordset;
   } catch (err) {
     console.error('Error in empStatusSearch:', err);
@@ -172,12 +250,17 @@ exports.empStatusSearch = async (employeeId) => {
 };
 
 //  Employee task search by status = 'Pending'
-exports.empPStatusSearch = async (employeeId) => {
+exports.empPStatusSearch = async () => {
   try {
     const pool = await poolPromise;
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 0) {
+      throw new Error('Not Logged-in as Employee');
+    }
     const result = await pool.request()
-      .input('employeeId', sql.Int, employeeId)
+      .input('employeeId', sql.Int, global.loggedInUser)
       .execute('Emp_Pstatus_search');
+    console.log(result);
     return result.recordset;
   } catch (err) {
     console.error('Error in empPStatusSearch:', err);
@@ -189,15 +272,30 @@ exports.empPStatusSearch = async (employeeId) => {
 exports.acpDecStatus = async (taskId, decision) => {
   try {
     const pool = await poolPromise;
-    const employeeId = global.loggedInUser; // Use the global variable
-    if (!employeeId) {
-      throw new Error('User not logged in');
+    const userRole = await this.checkUser(global.loggedInUser);
+    if (userRole != 0) {
+      throw new Error('Not Logged-in as Employee');
     }
-    await pool.request()
-      .input('employeeId', sql.Int, employeeId)
-      .input('taskId', sql.Int, taskId)
-      .input('decision', sql.NVarChar, decision) // e.g., 'accept' or 'decline'
+    const result = await pool.request()
+      .input('employeeID', sql.Int, global.loggedInUser)
+      .input('orderID', sql.Int, taskId)
+      .input('claim', sql.NVarChar, decision) // e.g., 'accept' or 'decline'
       .execute('acp_dec_status');
+    if (result.returnValue == 1) {
+      return { message: 'Order Accepted successfully' };
+    }
+    else if (result.returnValue == -1) {
+      return { message: 'Order ID is not found' };
+    }
+    else if (result.returnValue == -2) {
+      return { message: 'Access Denied: You can only accept orders assigned to you.' };
+    }
+    else if (result.returnValue == -3) {
+      return { message: 'Invalid decision value. It should be either Accept or Decline.' };
+    }
+    else if (result.returnValue == 0) {
+      return { message: 'Order Declined successfully' };
+    }
     return { message: 'Decision updated successfully' };
   } catch (err) {
     console.error('Error in acpDecStatus:', err);

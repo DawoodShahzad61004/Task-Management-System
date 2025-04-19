@@ -5,7 +5,8 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const result = await taskModel.login(email, password);
     if (result) {
-      global.loggedInUser = result.userId;
+      global.loggedInUser = result;
+      console.log("Logged in user:", global.loggedInUser);
     }
     res.status(200).json(result);
   } catch (error) {
@@ -16,8 +17,8 @@ exports.login = async (req, res) => {
 
 exports.newTask = async (req, res) => {
   try {
-    const { title, description, assignedTo, priority, dueDate } = req.body;
-    const result = await taskModel.newTask(title, description, assignedTo, priority, dueDate);
+    const { title, description, dueDate, priority, assignedTo } = req.body;
+    const result = await taskModel.newTask(title, description, dueDate, priority, assignedTo);
     res.status(201).json(result);
   } catch (error) {
     console.error('Error in newTask:', error);
@@ -83,6 +84,7 @@ exports.employeeSearch = async (req, res) => {
 exports.empUpdateStatus = async (req, res) => {
   try {
     const { taskId, status } = req.body;
+    console.log("In Controller File\nTask ID:", taskId, "Status:", status);
     const result = await taskModel.empUpdateStatus(taskId, status);
     res.status(200).json(result);
   } catch (error) {
@@ -93,8 +95,7 @@ exports.empUpdateStatus = async (req, res) => {
 
 exports.empStatusSearch = async (req, res) => {
   try {
-    const { employeeId } = req.query;
-    const result = await taskModel.empStatusSearch(parseInt(employeeId));
+    const result = await taskModel.empStatusSearch();
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in empStatusSearch:', error);
@@ -104,8 +105,7 @@ exports.empStatusSearch = async (req, res) => {
 
 exports.empPStatusSearch = async (req, res) => {
   try {
-    const { employeeId } = req.query;
-    const result = await taskModel.empPStatusSearch(parseInt(employeeId));
+    const result = await taskModel.empPStatusSearch();
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in empPStatusSearch:', error);
