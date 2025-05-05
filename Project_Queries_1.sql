@@ -17,7 +17,7 @@ create table PersonnelInfo (
 	infoID int primary Key identity(1,1),
 	fName varchar(50) NOT NULL,
 	lName varchar(50) NOT NULL,
-    email varchar(100) NOT NULL,
+    	email varchar(100) UNIQUE NOT NULL,
 	password_hash VARCHAR(255) NOT NULL,
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 	contactNo varchar(15) NOT NULL,
