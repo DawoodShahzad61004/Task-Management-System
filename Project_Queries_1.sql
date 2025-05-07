@@ -1,46 +1,58 @@
-use master 
-drop database Project_DB;
-go
+USE master;
+GO
+
+ALTER DATABASE Project_DB SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+GO
+
+DROP DATABASE Project_DB;
+GO
+
 
 create database Project_DB;
 go
 use Project_DB;
 go
 
-create table PersonnelRank (
-	rankID int primary Key identity(1,1),
-	[rank] varchar(20) check ([rank] in ('Team Lead', 'Frontend Developer', 'Backend Developer', 'Code Tester', 'DB Handler')),
-	salary int check (salary >= 0)
+CREATE TABLE RankSalary (
+    [rank] VARCHAR(20) PRIMARY KEY,
+    salary INT CHECK (salary >= 0)
+);
+
+CREATE TABLE Personnel (
+    rankID INT PRIMARY KEY IDENTITY(1,1),
+    [rank] VARCHAR(20),
+
+	FOREIGN KEY ([rank]) REFERENCES RankSalary([rank])
 );
 
 create table PersonnelInfo (
 	infoID int primary Key identity(1,1),
 	fName varchar(50) NOT NULL,
 	lName varchar(50) NOT NULL,
-    	email varchar(100) UNIQUE NOT NULL,
+    email varchar(100) NOT NULL UNIQUE,
 	password_hash VARCHAR(255) NOT NULL,
 	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 	contactNo varchar(15) NOT NULL,
 	gender char(1) NOT NULL, check(gender IN ('M', 'F')),
 	dofBirth DATE,
-	--CONSTRAINT id_uniqueness UNIQUE (email, password_hash)
-	rankID int foreign Key references PersonnelRank(rankID)
+	rankID int foreign Key references Personnel(rankID)
 );
 
 CREATE TABLE Admins (
     admin_id int primary Key identity(1,1),
-    infoID int foreign key references PersonnelInfo(infoID),
-	ordersAssigned int check (ordersAssigned >= 0)
+	ordersAssigned int check (ordersAssigned >= 0),
+    infoID int UNIQUE,
+	FOREIGN KEY (infoID) REFERENCES PersonnelInfo(infoID)
 );
 
 
 CREATE TABLE Employees (
     employee_id int primary Key identity(1,1),
-    --[name] varchar(100) NOT NULL,
 	ordersAccepted int check (ordersAccepted >= 0),
 	ordersCancelled int check (ordersCancelled >= 0),
 	ordersSubmittedLate int check (ordersSubmittedLate >= 0),
-    infoID int foreign key references PersonnelInfo(infoID),
+    infoID int UNIQUE,
+	FOREIGN KEY (infoID) REFERENCES PersonnelInfo(infoID)
 );
 
 
@@ -52,7 +64,7 @@ CREATE TABLE Orders (
     [priority] varchar(20) check ([priority] in ('Low', 'Medium', 'High')) default 'Medium',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deadline date,
-    admin_id int foreign key references Admins(admin_id) on delete set null,
+    admin_id int foreign key references Admins(admin_id) on delete set null
 );
 
 
@@ -63,19 +75,28 @@ CREATE TABLE Order_Assignments (
     assigned_at DATETIME not null DEFAULT CURRENT_TIMESTAMP,
 	completed_at DATETIME not null DEFAULT CURRENT_TIMESTAMP
 
-
+	UNIQUE (order_id, employee_id),
     foreign key (order_id) references Orders(order_id) on delete cascade,
     foreign key (employee_id) references Employees(employee_id) on delete cascade
 );
 alter table order_assignments 
 alter column completed_at DATETIME null 
--- Insert values into PersonnelRank
-INSERT INTO PersonnelRank ([rank], salary) VALUES 
+
+--Insert into RankSalary
+INSERT INTO RankSalary ([rank], salary) VALUES
 ('Team Lead', 150000),
 ('Frontend Developer', 100000),
 ('Backend Developer', 110000),
 ('Code Tester', 95000),
 ('DB Handler', 105000);
+
+--Insert into Personnel
+INSERT INTO Personnel ([rank]) VALUES
+('Team Lead'),
+('Frontend Developer'),
+('Backend Developer'),
+('Code Tester'),
+('DB Handler');
 
 -- Insert values into PersonnelInfo (Admins & Employees)
 INSERT INTO PersonnelInfo (fName, lName, email, password_hash, created_at, contactNo, gender, dofBirth, rankID) VALUES 
@@ -131,7 +152,8 @@ INSERT INTO Order_Assignments (order_id, employee_id, assigned_at, completed_at)
 (7, 2, DEFAULT, DEFAULT), -- Zainab (Backend) completed Backend Logic
 (8, 3, DEFAULT, NULL); -- Taha (Code Tester) performing Security Testing
 
-select * from PersonnelRank
+select * from Personnel
+select * from RankSalary
 select * from PersonnelInfo
 select * from Admins
 select * from Employees
