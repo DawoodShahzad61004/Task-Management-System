@@ -18,6 +18,7 @@ exports.login = async (username, password) => {
   }
 };
 
+// Check user role
 exports.checkUser = async (userId) => {
   try {
     const pool = await poolPromise;

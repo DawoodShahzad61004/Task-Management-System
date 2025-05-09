@@ -27,20 +27,20 @@ function LoginPage() {
         body: JSON.stringify({ email, password })
       })
 
-      console.log("Response object:", response);
-      console.log("Response.ok:", response.ok);
+      //console.log("Response object:", response);
+      //console.log("Response.ok:", response.ok);
 
       const data = await response.json();
-      console.log("Response JSON (data):", data);
+      //console.log("Response JSON (data):", data);
+
 
 
       if (response.ok) {
         // Check if login was successful based on RoleID
-        console.log("RoleID:", data.RoleID);
-        console.log("Data object:", data);
+        //console.log("Data object:", data);
         if (data !== undefined && data !== -1) {
           const loginSuccess = login(data);
-          console.log("loginSuccess:", loginSuccess);
+          //console.log("loginSuccess:", loginSuccess);
           if (loginSuccess) {
             navigate("/");
           } else {

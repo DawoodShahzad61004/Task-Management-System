@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const login = (user) => {
-    if (user.RoleID === -1) {
+    //console.log("Login function called with user:", user);
+    if (user === -1) {
       setIsAuthenticated(false);
     } else {
       setIsAuthenticated(true);
@@ -20,10 +21,11 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("user");  // Remove user info from localStorage
+    localStorage.removeItem("userRole"); // Remove user role from localStorage
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout}}>
       {children}
     </AuthContext.Provider>
   );

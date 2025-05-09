@@ -4,6 +4,7 @@ const taskController = require('../controllers/taskController');
 
 // Core task operations
 router.post('/login', taskController.login);
+router.get('/checkUser/:userId', taskController.checkUser);
 router.post('/new', taskController.newTask);
 router.put('/status', taskController.updateStatus);
 router.put('/priority', taskController.updatePriority);

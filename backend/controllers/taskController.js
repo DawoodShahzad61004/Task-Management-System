@@ -15,6 +15,20 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.checkUser = async (req, res) => {
+  try {
+    const { userId } = req.params; 
+    const roleId = await taskModel.checkUser(userId);
+
+    console.log("Role ID for user:", roleId);
+
+    res.status(200).json({ roleId });
+  } catch (error) {
+    console.error("Error in checkUser:", error);
+    res.status(500).json({ error: "Failed to check user role" });
+  }
+};
+
 exports.newTask = async (req, res) => {
   try {
     const { title, description, dueDate, priority, assignedTo } = req.body;

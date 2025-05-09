@@ -1,21 +1,28 @@
-import React from "react";
-import { FaFilter } from "react-icons/fa"; // Filter icon
-import { Link } from "react-router-dom"; // Import Link from react-router-dom
-import { useState } from "react";
+"use client"
+import { Link, useLocation } from "react-router-dom" // Import Link and useLocation from react-router-dom
+import { useState, useEffect } from "react"
 
 function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedFilters, handleFilterChange }) {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false)
+  const location = useLocation()
+
+  // Update active page based on current location
+  useEffect(() => {
+    const path = location.pathname
+    if (path === "/" || path === "") {
+      setActivePage("home")
+    } else if (path === "/profile") {
+      setActivePage("profile")
+    } else if (path === "/tasks") {
+      setActivePage("tasks")
+    }
+  }, [location, setActivePage])
 
   return (
-    <nav
-      className="navbar"
-      onMouseEnter={() => setIsNavbarOpen(true)}
-      onMouseLeave={() => setIsNavbarOpen(false)}
-    >
+    <nav className="navbar" onMouseEnter={() => setIsNavbarOpen(true)} onMouseLeave={() => setIsNavbarOpen(false)}>
       <div className="navbar-header">
-        {isNavbarOpen ? (
-          <h2 className="navbar-title">SYNC-OPS</h2>
-        ) : (
+        <h2 className="navbar-title">SYNC-OPS</h2>
+        {!isNavbarOpen && (
           <svg
             className="navbar-logo"
             width="40px"
@@ -23,32 +30,17 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
             viewBox="-6.3 -6.3 33.60 33.60"
             version="1.1"
             xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
             fill="#000000"
           >
-            <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-            <g
-              id="SVGRepo_tracerCarrier"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            ></g>
+            <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+            <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
             <g id="SVGRepo_iconCarrier">
               {" "}
-              <title>menu_navigation_grid [#1C274C]</title>{" "}
-              <desc>Created with Sketch.</desc> <defs> </defs>{" "}
-              <g
-                id="Page-1"
-                stroke="none"
-                stroke-width="1"
-                fill="none"
-                fill-rule="evenodd"
-              >
+              <title>menu_navigation_grid [#1C274C]</title> <desc>Created with Sketch.</desc> <defs> </defs>{" "}
+              <g id="Page-1" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
                 {" "}
-                <g
-                  id="Dribbble-Light-Preview"
-                  transform="translate(-139.000000, -200.000000)"
-                  fill="#1C274C"
-                >
+                <g id="Dribbble-Light-Preview" transform="translate(-139.000000, -200.000000)" fill="#1C274C">
                   {" "}
                   <g id="icons" transform="translate(56.000000, 160.000000)">
                     {" "}
@@ -66,10 +58,7 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
         )}
       </div>
       <ul>
-        <li
-          className={activePage === "home" ? "active" : ""}
-          onClick={() => setActivePage("home")}
-        >
+        <li className={activePage === "home" ? "active" : ""} onClick={() => setActivePage("home")}>
           <i className="fas fa-home">
             <svg
               width="40px"
@@ -78,40 +67,27 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
-              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-              <g
-                id="SVGRepo_tracerCarrier"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></g>
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
               <g id="SVGRepo_iconCarrier">
                 {" "}
                 <path
                   d="M22 12.2039V13.725C22 17.6258 22 19.5763 20.8284 20.7881C19.6569 22 17.7712 22 14 22H10C6.22876 22 4.34315 22 3.17157 20.7881C2 19.5763 2 17.6258 2 13.725V12.2039C2 9.91549 2 8.77128 2.5192 7.82274C3.0384 6.87421 3.98695 6.28551 5.88403 5.10813L7.88403 3.86687C9.88939 2.62229 10.8921 2 12 2C13.1079 2 14.1106 2.62229 16.116 3.86687L18.116 5.10812C20.0131 6.28551 20.9616 6.87421 21.4808 7.82274"
                   stroke="#1C274C"
-                  stroke-width="2.4"
-                  stroke-linecap="round"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
                 ></path>{" "}
-                <path
-                  d="M15 18H9"
-                  stroke="#1C274C"
-                  stroke-width="2.4"
-                  stroke-linecap="round"
-                ></path>{" "}
+                <path d="M15 18H9" stroke="#1C274C" strokeWidth="2.4" strokeLinecap="round"></path>{" "}
               </g>
             </svg>
           </i>
           <span>
-          <Link to="/" onClick={() => setIsNavbarOpen(false)}>
-            Home
-          </Link>
+            <Link to="/" onClick={() => setIsNavbarOpen(false)}>
+              Home
+            </Link>
           </span>
-          
         </li>
-        <li
-          className={activePage === "tasks" ? "active" : ""}
-          onClick={() => setActivePage("tasks")}
-        >
+        <li className={activePage === "tasks" ? "active" : ""} onClick={() => setActivePage("tasks")}>
           {" "}
           <i className="fas fa-tasks">
             <svg
@@ -121,18 +97,14 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
               version="1.1"
               id="Layer_1"
               xmlns="http://www.w3.org/2000/svg"
-              xmlns:xlink="http://www.w3.org/1999/xlink"
+              xmlnsXlink="http://www.w3.org/1999/xlink"
               viewBox="-153.6 -153.6 819.20 819.20"
-              xml:space="preserve"
+              xmlSpace="preserve"
               stroke="#1C274C"
-              stroke-width="0.00512"
+              strokeWidth="0.00512"
             >
-              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-              <g
-                id="SVGRepo_tracerCarrier"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></g>
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
               <g id="SVGRepo_iconCarrier">
                 {" "}
                 <g>
@@ -154,16 +126,12 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
             </svg>
           </i>
           <span>
-          <Link to="/tasks" onClick={() => setIsNavbarOpen(false)}>
-            Tasks
-          </Link>
+            <Link to="/tasks" onClick={() => setIsNavbarOpen(false)}>
+              Tasks
+            </Link>
           </span>
-          
         </li>
-        <li
-          className={activePage === "profile" ? "active" : ""}
-          onClick={() => setActivePage("profile")}
-        >
+        <li className={activePage === "profile" ? "active" : ""} onClick={() => setActivePage("profile")}>
           <i className="fas fa-cogs">
             <svg
               width="40px"
@@ -171,26 +139,17 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
               viewBox="-6 -6 32.00 32.00"
               version="1.1"
               xmlns="http://www.w3.org/2000/svg"
-              xmlns:xlink="http://www.w3.org/1999/xlink"
+              xmlnsXlink="http://www.w3.org/1999/xlink"
               fill="#1C274C"
             >
-              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-              <g
-                id="SVGRepo_tracerCarrier"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></g>
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
               <g id="SVGRepo_iconCarrier">
                 {" "}
-                <title>profile_round [#1C274C]</title>{" "}
-                <desc>Created with Sketch.</desc> <defs> </defs>{" "}
-                <g id="Page-1" stroke-width="2" fill="none" fill-rule="evenodd">
+                <title>profile_round [#1C274C]</title> <desc>Created with Sketch.</desc> <defs> </defs>{" "}
+                <g id="Page-1" strokeWidth="2" fill="none" fillRule="evenodd">
                   {" "}
-                  <g
-                    id="Dribbble-Light-Preview"
-                    transform="translate(-380.000000, -2119.000000)"
-                    fill="#1C274C"
-                  >
+                  <g id="Dribbble-Light-Preview" transform="translate(-380.000000, -2119.000000)" fill="#1C274C">
                     {" "}
                     <g id="icons" transform="translate(56.000000, 160.000000)">
                       {" "}
@@ -207,15 +166,12 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
             </svg>
           </i>
           <span>
-          <Link to="/profile" onClick={() => setIsNavbarOpen(false)}>
-            Profile
-          </Link>
+            <Link to="/profile" onClick={() => setIsNavbarOpen(false)}>
+              Profile
+            </Link>
           </span>
         </li>
-        <li
-          className={activePage === "logout" ? "active" : ""}
-          onClick={() => setActivePage("logout")}
-        >
+        <li className={activePage === "logout" ? "active" : ""} onClick={() => setActivePage("logout")}>
           {" "}
           <i className="fas fa-sign-out-alt">
             <svg
@@ -225,19 +181,15 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               stroke="#1C274C"
-              stroke-width="0.00024000000000000003"
+              strokeWidth="0.00024000000000000003"
             >
-              <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-              <g
-                id="SVGRepo_tracerCarrier"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              ></g>
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
               <g id="SVGRepo_iconCarrier">
                 {" "}
                 <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
                   d="M16.125 12C16.125 11.5858 15.7892 11.25 15.375 11.25L4.40244 11.25L6.36309 9.56944C6.67759 9.29988 6.71401 8.8264 6.44444 8.51191C6.17488 8.19741 5.7014 8.16099 5.38691 8.43056L1.88691 11.4306C1.72067 11.573 1.625 11.7811 1.625 12C1.625 12.2189 1.72067 12.427 1.88691 12.5694L5.38691 15.5694C5.7014 15.839 6.17488 15.8026 6.44444 15.4881C6.71401 15.1736 6.67759 14.7001 6.36309 14.4306L4.40244 12.75L15.375 12.75C15.7892 12.75 16.125 12.4142 16.125 12Z"
                   fill="#1C274C"
                 ></path>{" "}
@@ -252,7 +204,7 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
         </li>
       </ul>
     </nav>
-  );
+  )
 }
 
-export default Navbar;
+export default Navbar
