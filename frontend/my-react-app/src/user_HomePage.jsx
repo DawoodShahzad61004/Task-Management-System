@@ -78,7 +78,8 @@ function User_HomePage() {
               title: task.title ? `Task ${task.title}` : `Task ${i + 1}`,
               orderID: task.order_id ? `Order ID ${task.order_id}` : `Order ID ${i + 1}`,
               status: task.status || "unknown",
-              priority: task.priority || "low"
+              priority: task.priority || "low",
+              description: task.description || "No description"
             }))
           : [];
       
