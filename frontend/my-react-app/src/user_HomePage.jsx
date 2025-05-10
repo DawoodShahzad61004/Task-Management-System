@@ -1,144 +1,121 @@
-import React, { useState, useEffect } from "react";
-import { FaFilter } from "react-icons/fa";
-import Navbar from "./Navbar";
-import { useAuth } from "../context/AuthContext.jsx";
+"use client"
+
+import { useState, useEffect } from "react"
+import { FaFilter } from "react-icons/fa"
 
 function User_HomePage() {
-  //console.log("User_HomePage component rendered");
-  const { isAdmin, isEmployee } = useAuth();
-  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [tasks, setTasks] = useState([]);
-
-
-  const fetchTasks = async () => {
-    try {
-      setIsLoading(true);
-  
-      const user = JSON.parse(localStorage.getItem("user"));
-      //console.log("User from localStorage:", user);
-
-      const checkUserRole = async (user) => {
-        try {
-          const response = await fetch(`http://localhost:5000/api/tasks/checkUser/${user}`);
-      
-          if (!response.ok) {
-            throw new Error('Failed to fetch user role');
-          }
-      
-          const data = await response.json();
-          return data.roleId; // Access the roleId from the object
-        } catch (error) {
-          console.error('Error checking user role:', error);
-          return -1;
-        }
-      };
-      
-      const role = await checkUserRole(user); 
-      //console.log("User Role ID:", role);   
-      localStorage.setItem("userRole", JSON.stringify(role)); // Store user role (admin or employee) in localStorage
-
-      try {
-        // 1. Define URLs
-        let urlPending = "";
-        let urlInProgress = "";
-      
-        if (role === 1) {
-          urlPending = "http://localhost:5000/api/tasks/search/status?status=Pending";
-          urlInProgress = "http://localhost:5000/api/tasks/search/status?status=In Progress";
-        } else if (role === 0) {
-          urlPending = "http://localhost:5000/api/tasks/employee/search/partial-status";
-          urlInProgress = "http://localhost:5000/api/tasks/employee/search/status";
-        } else {
-          console.error("Invalid or unknown role:", role);
-          return;
-        }
-      
-        // 2. Fetch both
-        const [res1, res2] = await Promise.all([
-          fetch(urlPending, { method: "GET", headers: { "Content-Type": "application/json" } }),
-          fetch(urlInProgress, { method: "GET", headers: { "Content-Type": "application/json" } }),
-        ]);
-      
-        const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
-      
-        // 3. Transform both
-        const transformedTasks1 = Array.isArray(data1)
-          ? data1.map((task, i) => ({
-              title: task.title ? `Task ${task.title}` : `Task ${i + 1}`,
-              orderID: task.order_id ? `Order ID ${task.order_id}` : `Order ID ${i + 1}`,
-              status: task.status || "unknown",
-              priority: task.priority || "low",
-              description: task.description || "No description"
-            }))
-          : [];
-      
-        const transformedTasks2 = Array.isArray(data2)
-          ? data2.map((task, i) => ({
-              title: task.title ? `Task ${task.title}` : `Task ${i + 1}`,
-              orderID: task.order_id ? `Order ID ${task.order_id}` : `Order ID ${i + 1}`,
-              status: task.status || "unknown",
-              priority: task.priority || "low",
-              description: task.description || "No description"
-            }))
-          : [];
-      
-        // 4. Combine, sort and set once
-        const combinedTasks = [...transformedTasks1, ...transformedTasks2];
-        combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
-        setTasks(combinedTasks);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    catch (error) {
-      console.error("Error fetching tasks:", error);
-      setIsLoading(false);
-    }      
-  };
-  
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const [activePage, setActivePage] = useState("home");
-  const [showFilter, setShowFilter] = useState(false);
+  const [showFilter, setShowFilter] = useState(false)
   const [selectedFilters, setSelectedFilters] = useState({
     pending: false,
-    inProgress: false
-  });
+    inProgress: false,
+  })
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false)
+  const [tasks, setTasks] = useState([]) // State to store tasks
+  const [isLoading, setIsLoading] = useState(false) // Loading state
 
-  const toggleFilter = () => setShowFilter(!showFilter);
+  const toggleFilter = () => setShowFilter(!showFilter)
 
   const handleFilterChange = (filter) => {
     setSelectedFilters((prevFilters) => ({
       ...prevFilters,
       [filter]: !prevFilters[filter],
-    }));
-  };
+    }))
+  }
+
+  const fetchTasks = async () => {
+    setIsLoading(true)
+    try {
+      const user = JSON.parse(localStorage.getItem("user"))
+
+      const checkUserRole = async (user) => {
+        const response = await fetch(`http://localhost:5000/api/tasks/checkUser/${user}`)
+        if (!response.ok) throw new Error("Failed to fetch user role")
+        const data = await response.json()
+        return data.roleId
+      }
+
+      const role = await checkUserRole(user)
+      localStorage.setItem("userRole", JSON.stringify(role))
+
+      let urlPending = ""
+      let urlInProgress = ""
+
+      if (role === 1) {
+        urlPending = "http://localhost:5000/api/tasks/search/status?status=Pending"
+        urlInProgress = "http://localhost:5000/api/tasks/search/status?status=In Progress"
+      } else if (role === 0) {
+        urlPending = "http://localhost:5000/api/tasks/employee/search/partial-status"
+        urlInProgress = "http://localhost:5000/api/tasks/employee/search/status"
+      }
+
+      const [res1, res2] = await Promise.all([
+        fetch(urlPending),
+        fetch(urlInProgress),
+      ])
+      const [data1, data2] = await Promise.all([res1.json(), res2.json()])
+
+      const transformedTasks1 = Array.isArray(data1)
+        ? data1.map((task, i) => ({
+            title: task.title || `Task ${i + 1}`,
+            orderID: `Order ID ${task.order_id || i + 1}`,
+            status: task.status || "unknown",
+            priority: task.priority || "low",
+            description: task.description || "No description"
+          }))
+        : []
+
+      const transformedTasks2 = Array.isArray(data2)
+        ? data2.map((task, i) => ({
+            title: task.title || `Task ${i + 1}`,
+            orderID: `Order ID ${task.order_id || i + 1}`,
+            status: task.status || "unknown",
+            priority: task.priority || "low",
+            description: task.description || "No description" // Added description field
+          }))
+        : []
+
+      // Combine and sort tasks by orderID
+      const combinedTasks = [...transformedTasks1, ...transformedTasks2]
+      combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID)) // Sorting tasks by orderID
+      setTasks(combinedTasks)
+    } catch (error) {
+      console.error("Error fetching tasks:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTasks()
+  }, [])
+
+  // Monitor navbar hover state
+  useEffect(() => {
+    const navbar = document.querySelector(".navbar")
+    if (navbar) {
+      const isHovered = window.getComputedStyle(navbar).width === "250px"
+      setIsNavbarOpen(isHovered)
+
+      const handleMouseEnter = () => setIsNavbarOpen(true)
+      const handleMouseLeave = () => setIsNavbarOpen(false)
+
+      navbar.addEventListener("mouseenter", handleMouseEnter)
+      navbar.addEventListener("mouseleave", handleMouseLeave)
+
+      return () => {
+        navbar.removeEventListener("mouseenter", handleMouseEnter)
+        navbar.removeEventListener("mouseleave", handleMouseLeave)
+      }
+    }
+  }, [])
 
   return (
     <div className="dashboard">
-       <Navbar
-        activePage={activePage} 
-        setActivePage={setActivePage} 
-        toggleFilter={toggleFilter} 
-        showFilter={showFilter} 
-        selectedFilters={selectedFilters} 
-        handleFilterChange={handleFilterChange} 
-      />
-      <section className="content">
-      <div className="header">
+      <section className={`content ${isNavbarOpen ? "navbar-expanded" : ""}`}>
+        <div className="header">
           <h2 className="header-title">HOME PAGE</h2>
           <div className="search-filter-container">
-            <input
-              type="text"
-              className="search-bar"
-              placeholder="Search tasks..."
-            />
+            <input type="text" className="search-bar" placeholder="Search tasks..." />
             <div className="filter-container">
               <FaFilter
                 className={`filter-icon ${selectedFilters.pending || selectedFilters.inProgress ? "selected" : ""}`}
@@ -165,35 +142,40 @@ function User_HomePage() {
                 </div>
               )}
             </div>
-
           </div>
           <div className="profile-image">
-            <img src="DefaultImage.png" alt="Dummy" />
+            <img src="/DefaultImage.png?height=40&width=40" alt="Profile" />
           </div>
         </div>
         <h1 className="dashboard_title">
           Welcome back, <span>FBI!</span>
         </h1>
         <div className="task-grid">
-          {tasks.map((task, index) => (
-            <div key={index} className={`task-card ${task.status}`}>
-              <div className="category-label">{task.orderID}</div>
-              <h4>{task.title}</h4>
-              <div><p>{task.description}</p></div>
-              <div className="tags">
-              <div className="task-status">
-                <span className={task.status}>{task.status}</span>
+          {isLoading ? (
+            <p>Loading tasks...</p>
+          ) : (
+            tasks.map((task, index) => (
+              <div key={index} className={`task-card ${task.status.toLowerCase()}`}>
+                <div className="category-label">{task.orderID}</div> {/* Corrected Order ID display */}
+                <h4>{task.title}</h4>
+                <p>{task.description}</p> {/* Added description to be shown */}
+                <div className="tags">
+                  {/* Apply correct status class */}
+                  <div className={`task-status ${task.status.replace(" ", "").toLowerCase()}`}>
+                    <span>{task.status}</span> {/* Status tag */}
+                  </div>
+                  {/* Apply correct priority class */}
+                  <div className={`task-priority ${task.priority.toLowerCase()}`}>
+                    <span>{task.priority}</span> {/* Priority tag */}
+                  </div>
+                </div>
               </div>
-              <div className="task-priority">
-                <span className={task.priority}>{task.priority}</span>
-              </div>
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
     </div>
-  );
+  )
 }
 
-export default User_HomePage;
+export default User_HomePage

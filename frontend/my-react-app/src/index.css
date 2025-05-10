@@ -352,8 +352,11 @@ h1 {
 .navbar li span {
   display: none;
   margin-left: 15px;
+  vertical-align: middle;
 }
-
+.navbar li svg{
+  vertical-align: middle;
+}
 .navbar:hover {
   width: 250px;
 }
@@ -404,6 +407,306 @@ h1 {
 .navbar li:hover {
   background-color: #2980b9;
 }
+
+/* Task Detail Popup Styles */
+.task-detail-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(3px);
+}
+
+.task-detail-popup {
+  background-color: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+  padding: 0;
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid #eee;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border-radius: 12px 12px 0 0;
+}
+
+.popup-header h3 {
+  color: white;
+  font-size: 1.6rem;
+  margin: 0;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.2s ease;
+  height: 30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.close-button:hover {
+  transform: scale(1.2);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.popup-content {
+  padding: 25px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.detail-section {
+  flex: 1;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.detail-section:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.section-icon {
+  color: #3498db;
+  font-size: 1.2rem;
+  margin-right: 10px;
+}
+
+.detail-section h4 {
+  color: #2c3e50;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: bold;
+}
+
+.detail-item {
+  display: flex;
+  margin: 12px 0;
+  align-items: flex-start;
+}
+
+.detail-item.description {
+  flex-direction: column;
+}
+
+.detail-label {
+  font-weight: bold;
+  color: #555;
+  min-width: 80px;
+  margin-right: 10px;
+}
+
+.detail-value {
+  color: #333;
+  flex: 1;
+}
+
+.detail-item.description .detail-value {
+  margin-top: 8px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+/* Improved Custom Select Styling */
+.status-dropdown-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 200px;
+}
+
+.custom-select {
+  appearance: none;
+  width: 100%;
+  padding: 10px 35px 10px 15px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: white;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.custom-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  border-color: #3498db;
+}
+
+.custom-select.pending {
+  color: gray;
+  border-color: rgba(169, 169, 169, 0.5);
+}
+
+.custom-select.inprogress {
+  color: orange;
+  border-color: rgba(255, 165, 0, 0.5);
+}
+
+.custom-select.completed {
+  color: green;
+  border-color: rgba(0, 255, 0, 0.5);
+}
+
+.custom-select.cancelled {
+  color: red;
+  border-color: rgba(255, 0, 0, 0.5);
+}
+
+.custom-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Spinner for loading state */
+.spinner-container {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-icon {
+  color: #3498db;
+  font-size: 1.2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Task Priority Styling in Popup */
+.task-priority {
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-weight: bold;
+  text-align: center;
+  display: inline-block;
+}
+
+.loading-text {
+  color: #777;
+  font-style: italic;
+  margin: 10px 0;
+  animation: pulse 1.5s infinite;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Make task items show pointer cursor to indicate they're clickable */
+.task-item {
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .detail-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .task-detail-popup {
+    width: 95%;
+    max-height: 90vh;
+  }
+}
+
+/* Add these styles to your existing CSS */
 
 /* Content section styling */
 /* Adjust content area when navbar is open */
@@ -504,8 +807,7 @@ h1 {
 }
 
 /* Task Status Styling */
-.task-status .inProgress,
-.task-status.inProgress {
+.task-status.inprogress {
   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
@@ -514,9 +816,8 @@ h1 {
   background-color: rgba(255, 165, 0, 0.3);
 }
 
-.task-status .pending,
 .task-status.pending {
-  width: 100px;
+   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
   text-align: center;
@@ -524,18 +825,15 @@ h1 {
   background-color: rgba(169, 169, 169, 0.3);
 }
 
-.task-status .completed,
 .task-status.completed {
-  width: 100px;
+    width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
   text-align: center;
   color: green;
   background-color: rgba(0, 255, 0, 0.3);
 }
-
-.task-status .canceled,
-.task-status.canceled {
+.task-status.canceled{
   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
@@ -544,9 +842,7 @@ h1 {
   background-color: rgba(255, 0, 0, 0.3);
 }
 
-/* Task Priority Styling */
-.task-priority .high,
-.task-badge.high {
+.task-priority.high {
   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
@@ -554,9 +850,7 @@ h1 {
   color: red;
   background-color: rgba(255, 0, 0, 0.3);
 }
-
-.task-priority .medium,
-.task-badge.medium {
+.task-priority.medium {
   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
@@ -565,8 +859,7 @@ h1 {
   background-color: rgba(255, 165, 0, 0.3);
 }
 
-.task-priority .low,
-.task-badge.low {
+.task-priority.low {
   width: 100px;
   border-radius: 15px;
   padding: 5px 10px;
@@ -575,13 +868,13 @@ h1 {
   background-color: rgba(0, 255, 0, 0.3);
 }
 
+
 .task-card .category-label {
   background-color: #3498db;
   color: white;
-  font-size: 0.9rem;
+  font-size: 1rem;
   padding: 5px 10px;
   border-radius: 5px;
-  height: 30px;
   font-weight: bold;
 }
 
@@ -605,6 +898,8 @@ h1 {
 .task-card .task-button:hover {
   background-color: #2980b9;
 }
+
+
 
 /* Profile Header */
 .profile-header {
