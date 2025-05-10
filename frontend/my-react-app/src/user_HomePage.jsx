@@ -83,7 +83,7 @@ function User_HomePage() {
             }))
           : [];
       
-        // 4. Combine and set once
+        // 4. Combine, sort and set once
         const combinedTasks = [...transformedTasks1, ...transformedTasks2];
         combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
         setTasks(combinedTasks);
