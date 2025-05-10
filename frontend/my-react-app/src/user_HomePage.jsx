@@ -68,7 +68,8 @@ function User_HomePage() {
               title: task.title ? `Task ${task.title}` : `Task ${i + 1}`,
               orderID: task.order_id ? `Order ID ${task.order_id}` : `Order ID ${i + 1}`,
               status: task.status || "unknown",
-              priority: task.priority || "low"
+              priority: task.priority || "low",
+              description: task.description || "No description"
             }))
           : [];
       
@@ -175,7 +176,7 @@ function User_HomePage() {
             <div key={index} className={`task-card ${task.status}`}>
               <div className="category-label">{task.orderID}</div>
               <h4>{task.title}</h4>
-              <p>Description goes here...</p>
+              <div><p>{task.description}</p></div>
               <div className="tags">
               <div className="task-status">
                 <span className={task.status}>{task.status}</span>

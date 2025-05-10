@@ -476,7 +476,7 @@ begin
     print 'Decision updated successfully';
 end
 
-
+GO
 CREATE PROCEDURE CheckUserRole
     @userId INT
 AS
@@ -498,13 +498,14 @@ END
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo
+
 GO
 CREATE TRIGGER trg_prevent_personnelinfo_delete
 ON PersonnelInfo
 INSTEAD OF DELETE
 AS
 BEGIN
-    PRINT('Cannot delete personnel info: it is referenced in other tables.', 16, 1);
+    RAISERROR ('Cannot delete personnel info: it is referenced in other tables.', 16, 1);
 END;
 
 -- TRIGGER : Enforce minimum age of 18 years
