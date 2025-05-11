@@ -1,4 +1,4 @@
-const taskModel = require('../models/taskModel');
+const taskModel = require("../models/taskModel");
 
 exports.login = async (req, res) => {
   try {
@@ -6,18 +6,39 @@ exports.login = async (req, res) => {
     const result = await taskModel.login(email, password);
     if (result) {
       global.loggedInUser = result;
+
+      global.loggedInUserMail = email;
+      global.loggedInUserRole = await taskModel.checkUser(global.loggedInUser);
+      if (global.loggedInUserRole != 1 && global.loggedInUserRole != 0) {
+        throw new Error("Invalid credentials");
+      }
+      console.log("Logged in user role:", global.loggedInUserRole);
+      console.log("Email", global.loggedInUserMail);
       console.log("Logged in user:", global.loggedInUser);
+      // console.log("Logged in user:", global.loggedInUser);
     }
+
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in login:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error("Error in login:", error);
+    res.status(500).json({ error: "Login failed" });
+  }
+};
+
+exports.userDetails = async (req, res) => {
+  try {
+    const userId = global.loggedInUser;
+    const result = await taskModel.userDetails(userId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in userDetails:", error);
+    res.status(500).json({ error: "Failed to fetch user details" });
   }
 };
 
 exports.checkUser = async (req, res) => {
   try {
-    const { userId } = req.params; 
+    const { userId } = req.params;
     const roleId = await taskModel.checkUser(userId);
 
     console.log("Role ID for user:", roleId);
@@ -32,11 +53,17 @@ exports.checkUser = async (req, res) => {
 exports.newTask = async (req, res) => {
   try {
     const { title, description, dueDate, priority, assignedTo } = req.body;
-    const result = await taskModel.newTask(title, description, dueDate, priority, assignedTo);
+    const result = await taskModel.newTask(
+      title,
+      description,
+      dueDate,
+      priority,
+      assignedTo
+    );
     res.status(201).json(result);
   } catch (error) {
-    console.error('Error in newTask:', error);
-    res.status(500).json({ error: 'Failed to create new task' });
+    console.error("Error in newTask:", error);
+    res.status(500).json({ error: "Failed to create new task" });
   }
 };
 
@@ -46,8 +73,8 @@ exports.updateStatus = async (req, res) => {
     const result = await taskModel.updateStatus(taskId, status);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in updateStatus:', error);
-    res.status(500).json({ error: 'Failed to update status' });
+    console.error("Error in updateStatus:", error);
+    res.status(500).json({ error: "Failed to update status" });
   }
 };
 
@@ -57,8 +84,8 @@ exports.updatePriority = async (req, res) => {
     const result = await taskModel.updatePriority(taskId, priority);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in updatePriority:', error);
-    res.status(500).json({ error: 'Failed to update priority' });
+    console.error("Error in updatePriority:", error);
+    res.status(500).json({ error: "Failed to update priority" });
   }
 };
 
@@ -68,8 +95,8 @@ exports.statusSearch = async (req, res) => {
     const result = await taskModel.statusSearch(status);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in statusSearch:', error);
-    res.status(500).json({ error: 'Failed to search by status' });
+    console.error("Error in statusSearch:", error);
+    res.status(500).json({ error: "Failed to search by status" });
   }
 };
 
@@ -79,8 +106,8 @@ exports.dateSearch = async (req, res) => {
     const result = await taskModel.dateSearch(toDate);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in dateSearch:', error);
-    res.status(500).json({ error: 'Failed to search by date' });
+    console.error("Error in dateSearch:", error);
+    res.status(500).json({ error: "Failed to search by date" });
   }
 };
 
@@ -90,8 +117,8 @@ exports.employeeSearch = async (req, res) => {
     const result = await taskModel.employeeSearch(parseInt(employeeId));
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in employeeSearch:', error);
-    res.status(500).json({ error: 'Failed to search by employee' });
+    console.error("Error in employeeSearch:", error);
+    res.status(500).json({ error: "Failed to search by employee" });
   }
 };
 
@@ -102,8 +129,8 @@ exports.empUpdateStatus = async (req, res) => {
     const result = await taskModel.empUpdateStatus(taskId, status);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in empUpdateStatus:', error);
-    res.status(500).json({ error: 'Failed to update status' });
+    console.error("Error in empUpdateStatus:", error);
+    res.status(500).json({ error: "Failed to update status" });
   }
 };
 
@@ -112,8 +139,10 @@ exports.empStatusSearch = async (req, res) => {
     const result = await taskModel.empStatusSearch();
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in empStatusSearch:', error);
-    res.status(500).json({ error: 'Failed to search employee tasks by status' });
+    console.error("Error in empStatusSearch:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to search employee tasks by status" });
   }
 };
 
@@ -122,8 +151,10 @@ exports.empPStatusSearch = async (req, res) => {
     const result = await taskModel.empPStatusSearch();
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in empPStatusSearch:', error);
-    res.status(500).json({ error: 'Failed to search employee tasks by partial status' });
+    console.error("Error in empPStatusSearch:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to search employee tasks by partial status" });
   }
 };
 
@@ -133,7 +164,7 @@ exports.acpDecStatus = async (req, res) => {
     const result = await taskModel.acpDecStatus(taskId, decision);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error in acpDecStatus:', error);
-    res.status(500).json({ error: 'Failed to process decision' });
+    console.error("Error in acpDecStatus:", error);
+    res.status(500).json({ error: "Failed to process decision" });
   }
 };

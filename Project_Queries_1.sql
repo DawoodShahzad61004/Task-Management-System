@@ -514,6 +514,92 @@ BEGIN
     RETURN NULL;  -- Invalid user
 END;
 
+CREATE PROCEDURE GetUserDetails
+    @userId INT, 
+    @userRole INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Declare a variable to store the infoID
+    DECLARE @infoID INT;
+
+    -- Ensure the user role is valid
+    IF @userRole NOT IN (0, 1)
+    BEGIN
+        PRINT 'Invalid user role';
+        RETURN -2;  -- Return error code if userRole is invalid
+    END
+
+    -- If the userRole is 1 (Admin), get the corresponding infoID from the Admins table
+    IF @userRole = 1
+    BEGIN
+        SELECT @infoID = infoID
+        FROM Admins
+        WHERE admin_id = @userId;
+
+        -- If the infoID is found, return the admin and associated personnel info
+        IF @infoID IS NOT NULL
+        BEGIN
+            SELECT 
+                p.fName,
+                p.lName,
+                p.email,
+                p.contactNo,
+                p.gender,
+                p.dofBirth,
+                r.rank AS PersonnelRank,
+                a.ordersAssigned
+            FROM PersonnelInfo p
+            JOIN PersonnelRank r ON p.rankID = r.rankID
+            JOIN Admins a ON p.infoID = a.infoID
+            WHERE p.infoID = @infoID;
+        END
+        ELSE
+        BEGIN
+            PRINT 'Admin not found';
+            RETURN -1;  -- Return error code if admin is not found
+        END
+    END
+    -- If the userRole is 0 (Employee), get the corresponding infoID from the Employees table
+    ELSE IF @userRole = 0
+    BEGIN
+        SELECT @infoID = infoID
+        FROM Employees
+        WHERE employee_id = @userId;
+
+        -- If the infoID is found, return the employee and associated personnel info
+        IF @infoID IS NOT NULL
+        BEGIN
+            SELECT 
+                p.fName,
+                p.lName,
+                p.email,
+                p.contactNo,
+                p.gender,
+                p.dofBirth,
+                r.rank AS PersonnelRank,
+                e.ordersAccepted,
+                e.ordersCancelled,
+                e.ordersSubmittedLate
+            FROM PersonnelInfo p
+            JOIN PersonnelRank r ON p.rankID = r.rankID
+            JOIN Employees e ON p.infoID = e.infoID
+            WHERE p.infoID = @infoID;
+        END
+        ELSE
+        BEGIN
+            PRINT 'Employee not found';
+            RETURN -1;  -- Return error code if employee is not found
+        END
+    END
+    ELSE
+    BEGIN
+        PRINT 'Invalid user role';
+        RETURN -2;  -- Return error code if userRole is invalid
+    END
+END;
+
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo
