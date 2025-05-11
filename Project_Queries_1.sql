@@ -478,23 +478,42 @@ end
 
 GO
 CREATE PROCEDURE CheckUserRole
+    @email VARCHAR(100),
     @userId INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM Admins WHERE infoID = @userId)
+    DECLARE @infoID INT;
+
+    -- Get the infoID based on the email provided
+    SELECT @infoID = infoID
+    FROM PersonnelInfo
+    WHERE email = @email;
+
+    -- Check if email is valid
+    IF @infoID IS NULL
     BEGIN
-        RETURN 1;
+        RETURN NULL;  -- Invalid user
     END
 
-    IF EXISTS (SELECT 1 FROM Employees WHERE infoID = @userId)
+    -- If userId matches the infoID, check for role
+    IF @infoID = @userId
     BEGIN
-        RETURN 0;
-    END
+        IF EXISTS (SELECT 1 FROM Admins WHERE infoID = @infoID)
+        BEGIN
+            RETURN 1;  -- Admin
+        END
 
-    RETURN -1;
-END
+        IF EXISTS (SELECT 1 FROM Employees WHERE infoID = @infoID)
+        BEGIN
+            RETURN 0;  -- Employee
+        END
+    END
+    -- If no match found for userId and email, return NULL
+    RETURN NULL;  -- Invalid user
+END;
+
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo

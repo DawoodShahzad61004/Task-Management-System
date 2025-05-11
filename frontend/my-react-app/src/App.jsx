@@ -24,8 +24,6 @@ function App() {
     else if (path === "/profile") setActivePage("profile")
     else if (path === "/tasks") setActivePage("tasks")
   }
-
-  // Set initial active page based on current path
   useState(() => {
     const path = window.location.pathname
     updateActivePage(path)

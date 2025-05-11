@@ -1,6 +1,7 @@
 const { sql, poolPromise } = require('../config/db');
 global.loggedInUser = null;
-
+global.loggedInUserMail= null;
+global.loggedInUserRole = null;
 
 // Login procedure
 exports.login = async (username, password) => {
@@ -11,6 +12,7 @@ exports.login = async (username, password) => {
       .input('password', sql.NVarChar, password)
       .execute('login');
       console.log('Stored procedure result:', result);
+      global.loggedInUserMail = username;
       return result.recordset[0].RoleID;
   } catch (err) {
     console.error('Error in login:', err);
@@ -23,13 +25,11 @@ exports.checkUser = async (userId) => {
   try {
     const pool = await poolPromise;
     const request = pool.request();
-
+    request.input('email', sql.NVarChar, global.loggedInUserMail);
     request.input('userId', sql.Int, userId);
 
     const result = await request.execute('CheckUserRole');
-
-    console.log('Stored procedure return value:', result.returnValue);
-
+    global.loggedInUserRole = result.returnValue;
     return result.returnValue; // Can be 1 (admin), 0 (employee), -1 (not found)
   } catch (error) {
     console.error('Error in checkUser:', error);
