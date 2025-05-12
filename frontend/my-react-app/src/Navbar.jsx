@@ -10,7 +10,6 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
   const navigate = useNavigate()
   const { logout } = useAuth()
 
-  // Update active page based on current location
   useEffect(() => {
     const path = location.pathname
     if (path === "/" || path === "") {
@@ -23,34 +22,35 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
       setActivePage("add-task")
     }
   }, [location, setActivePage])
-
+  
   // Check if user is admin
-  useEffect(() => {
-    const checkAdminStatus = () => {
-      try {
-        // Get the userRole from localStorage - this should match what's used in add-task.jsx
-        const userRole = JSON.parse(localStorage.getItem("user"))
-        // Explicitly check if userRole is exactly 1 (admin)
-        const isAdminUser = userRole === 1
-        setIsAdmin(isAdminUser)
-        console.log("User role:", userRole, "Is admin:", isAdminUser)
-      } catch (error) {
-        console.error("Error checking admin status:", error)
-        setIsAdmin(false)
-      }
+useEffect(() => {
+  const checkAdminStatus = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user) return setIsAdmin(false);
+
+      const response = await fetch(`http://localhost:5000/api/tasks/checkUser/${user}`);
+      if (!response.ok) throw new Error("Failed to fetch user role");
+
+      const data = await response.json();
+      const role = data.roleId;
+
+      // Save the role just like TasksPage does
+      localStorage.setItem("userRole", JSON.stringify(role));
+
+      const isAdminUser = role === 1;
+      setIsAdmin(isAdminUser);
+
+      console.log("Navbar role check: user =", user, "role =", role, "isAdmin =", isAdminUser);
+    } catch (error) {
+      console.error("Error determining admin status in Navbar:", error);
+      setIsAdmin(false);
     }
+  };
 
-    // Check immediately
-    checkAdminStatus()
-
-    // Set up an event listener for storage changes
-    window.addEventListener("storage", checkAdminStatus)
-
-    // Clean up
-    return () => {
-      window.removeEventListener("storage", checkAdminStatus)
-    }
-  }, [])
+  checkAdminStatus();
+}, []);
 
   return (
     <nav className="navbar" onMouseEnter={() => setIsNavbarOpen(true)} onMouseLeave={() => setIsNavbarOpen(false)}>

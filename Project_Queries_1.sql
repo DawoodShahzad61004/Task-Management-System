@@ -322,7 +322,7 @@ begin
     print 'Order status updated successfully';
 	return 1;
 end
-
+exec update_status 1, 'In Progress', 1
 go
 
 create procedure update_priority
@@ -689,9 +689,15 @@ BEGIN
     FROM PersonnelInfo
     WHERE infoID = @infoID;
 END;
+go
+CREATE PROCEDURE getNonAdminEmployees
+AS
+BEGIN
+    select E. employee_id, P.email from Employees E
+	join PersonnelInfo P on E.infoID= P.infoID
+END
 
-
-EXEC getAdminInfo @admin_id = 1;
+Exec getNonAdminEmployees
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo

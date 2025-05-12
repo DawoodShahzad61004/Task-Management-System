@@ -954,7 +954,7 @@ h1 {
 
 .custom-select {
   appearance: none;
-  width: 100%;
+  width: 150px;
   padding: 10px 35px 10px 15px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
@@ -1000,6 +1000,21 @@ h1 {
   opacity: 0.7;
   cursor: not-allowed;
 }
+.custom-select.low {
+  color: green;
+  border-color: rgba(0, 255, 0, 0.5);
+}
+
+.custom-select.medium {
+  color: orange;
+  border-color: rgba(255, 165, 0, 0.5);
+}
+
+.custom-select.high {
+  color: red;
+  border-color: rgba(255, 0, 0, 0.5);
+}
+
 
 /* Spinner for loading state */
 .spinner-container {
@@ -1285,6 +1300,27 @@ h1 {
 
 .task-card .task-button:hover {
   background-color: #2980b9;
+}
+
+.delete-button-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.delete-button {
+  background-color: white;
+  color: red;
+  border: 2px solid red;
+  border-radius: 20px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.delete-button:hover {
+  background-color: red;
+  color: white;
 }
 
 

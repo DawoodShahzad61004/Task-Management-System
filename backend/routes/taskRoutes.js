@@ -17,5 +17,8 @@ router.put('/employee/status', taskController.empUpdateStatus);
 router.get('/employee/search/status', taskController.empStatusSearch);
 router.get('/employee/search/partial-status', taskController.empPStatusSearch);
 router.put('/decision', taskController.acpDecStatus);
+router.get('/employees', taskController.getEmployees);
+
+
 
 module.exports = router;

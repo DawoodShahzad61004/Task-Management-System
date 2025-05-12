@@ -189,3 +189,14 @@ exports.acpDecStatus = async (req, res) => {
     res.status(500).json({ error: "Failed to process decision" });
   }
 };
+
+exports.getEmployees = async (req, res) => {
+  try {
+    const employees = await taskModel.getEmployees();
+    res.status(200).json(employees);
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    res.status(500).json({ error: "Failed to fetch employees" });
+  }
+};
+

@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 
 function TasksPage() {
-  const [tasks, setTasks] = useState([]); // Store tasks in state
+  const [tasks, setTasks] = useState([]);
   const [isNavbarHovered, setIsNavbarHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -55,38 +55,26 @@ function TasksPage() {
         fetch(urlInProgress)
       ]);
       const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+      const transformTasks = (data) =>
+        Array.isArray(data)
+          ? data.map((task) => ({
+              id: task.order_id || task.id,
+              title: task.title || "Untitled Task",
+              orderID: `Order ID ${task.order_id || task.id}`,
+              status: task.status || "Pending",
+              priority: task.priority || "Low",
+              description: task.description || "No description",
+              deadline: formatDate(task.deadline) || "No deadline",
+              createdAt: formatDateTime(task.created_at) || "Unknown",
+              adminId: task.admin_id
+            }))
+          : [];
 
-      const transformedTasks1 = Array.isArray(data1)
-        ? data1.map((task) => ({
-            id: task.order_id || task.id,
-            title: task.title || "Untitled Task",
-            orderID: `Order ID ${task.order_id || task.id}`,
-            status: task.status || "Pending",
-            priority: task.priority || "Low",
-            description: task.description || "No description",
-            deadline: formatDate(task.deadline) || "No deadline",
-            createdAt: formatDateTime(task.created_at) || "Unknown",
-            adminId: task.admin_id
-          }))
-        : [];
-
-      const transformedTasks2 = Array.isArray(data2)
-        ? data2.map((task) => ({
-            id: task.order_id || task.id,
-            title: task.title || "Untitled Task",
-            orderID: `Order ID ${task.order_id || task.id}`,
-            status: task.status || "Pending",
-            priority: task.priority || "Low",
-            description: task.description || "No description",
-            deadline: formatDate(task.deadline) || "No deadline",
-            createdAt: formatDateTime(task.created_at) || "Unknown",
-            adminId: task.admin_id
-          }))
-        : [];
-
-      // Combine and sort tasks by orderID
-      const combinedTasks = [...transformedTasks1, ...transformedTasks2];
-      combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID)); // Sorting tasks by orderID
+      const combinedTasks = [
+        ...transformTasks(data1),
+        ...transformTasks(data2)
+      ];
+      combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
       setTasks(combinedTasks);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -120,31 +108,27 @@ function TasksPage() {
     }
   };
 
-  // Function to format date without time
   const formatDate = (dateString) => {
     if (!dateString) return "No deadline";
     const date = new Date(dateString);
-    return date.toISOString().split("T")[0]; // Get date part only (YYYY-MM-DD)
+    return date.toISOString().split("T")[0];
   };
 
-  // Function to format date with time
   const formatDateTime = (dateString) => {
     if (!dateString) return "Unknown";
-    const date = new Date(dateString);
-    return date.toLocaleString("en-US", {
+    return new Intl.DateTimeFormat("en-US", {
+      timeZone: "UTC",
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit"
-    });
+    }).format(new Date(dateString));
   };
 
   const openTaskDetail = async (task) => {
     setSelectedTask(task);
     setIsPopupOpen(true);
-
-    // Fetch admin details when opening the popup
     const adminData = await fetchAdminDetails(task.adminId);
     setAdminDetails(adminData);
   };
@@ -161,23 +145,17 @@ function TasksPage() {
     setStatusUpdating(true);
 
     try {
-      // Get user role and ID from localStorage
       const userRole = JSON.parse(localStorage.getItem("userRole"));
-      const userId = JSON.parse(localStorage.getItem("user"));
-
-      // Determine which API endpoint to use based on user role
       const endpoint =
         userRole === 1
-          ? `http://localhost:5000/api/tasks/admin/updateStatus`
-          : `http://localhost:5000/api/tasks/employee/updateStatus`;
+          ? `http://localhost:5000/api/tasks/status`
+          : `http://localhost:5000/api/tasks/employee/status`;
 
-      // Make API call to update status
       const response = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId,
-          orderId: selectedTask.id,
+          taskId: selectedTask.id,
           status: newStatus
         })
       });
@@ -186,7 +164,6 @@ function TasksPage() {
         throw new Error("Failed to update task status");
       }
 
-      // Update local state
       const updatedTasks = tasks.map((task) =>
         task.id === selectedTask.id ? { ...task, status: newStatus } : task
       );
@@ -201,11 +178,38 @@ function TasksPage() {
     }
   };
 
+  const handlePriorityChange = async (e) => {
+    const newPriority = e.target.value;
+    if (!selectedTask || selectedTask.priority === newPriority) return;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/tasks/priority", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          taskId: selectedTask.id,
+          priority: newPriority
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to update priority");
+
+      const updatedTasks = tasks.map((task) =>
+        task.id === selectedTask.id ? { ...task, priority: newPriority } : task
+      );
+
+      setTasks(updatedTasks);
+      setSelectedTask({ ...selectedTask, priority: newPriority });
+    } catch (error) {
+      console.error("Error updating priority:", error);
+      alert("Failed to update task priority. Please try again.");
+    }
+  };
+
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // Monitor navbar hover state
   useEffect(() => {
     const navbar = document.querySelector(".navbar");
     if (navbar) {
@@ -224,6 +228,8 @@ function TasksPage() {
       };
     }
   }, []);
+
+  const userRole = JSON.parse(localStorage.getItem("userRole"));
 
   return (
     <div className={`content ${isNavbarHovered ? "navbar-expanded" : ""}`}>
@@ -291,7 +297,6 @@ function TasksPage() {
                 ×
               </button>
             </div>
-
             <div className="popup-content">
               <div className="detail-row">
                 <div className="detail-section">
@@ -389,14 +394,34 @@ function TasksPage() {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Priority:</span>
-                    <span
-                      className={`task-priority ${selectedTask.priority.toLowerCase()}`}
-                    >
-                      {selectedTask.priority.charAt(0).toUpperCase() +
-                        selectedTask.priority.slice(1)}
-                    </span>
+                    {userRole === 1 ? (
+                      <select
+                        className={`custom-select ${selectedTask.priority.toLowerCase()}`}
+                        value={selectedTask.priority}
+                        onChange={handlePriorityChange}
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                    ) : (
+                      <span
+                        className={`task-priority ${selectedTask.priority.toLowerCase()}`}
+                      >
+                        {selectedTask.priority.charAt(0).toUpperCase() +
+                          selectedTask.priority.slice(1)}
+                      </span>
+                    )}
                   </div>
                 </div>
+              </div>
+              <div className="delete-button-wrapper">
+                <button
+                  className="delete-button"
+                  onClick={() => alert("Delete action here")}
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
