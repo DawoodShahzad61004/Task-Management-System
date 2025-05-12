@@ -1,12 +1,14 @@
 "use client"
-import { Link, useLocation } from "react-router-dom" 
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"
 
 function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedFilters, handleFilterChange }) {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
-  const location = useLocation();
-  const { logout } = useAuth();
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { logout } = useAuth()
 
   // Update active page based on current location
   useEffect(() => {
@@ -17,8 +19,38 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
       setActivePage("profile")
     } else if (path === "/tasks") {
       setActivePage("tasks")
+    } else if (path === "/add-task") {
+      setActivePage("add-task")
     }
   }, [location, setActivePage])
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = () => {
+      try {
+        // Get the userRole from localStorage - this should match what's used in add-task.jsx
+        const userRole = JSON.parse(localStorage.getItem("user"))
+        // Explicitly check if userRole is exactly 1 (admin)
+        const isAdminUser = userRole === 1
+        setIsAdmin(isAdminUser)
+        console.log("User role:", userRole, "Is admin:", isAdminUser)
+      } catch (error) {
+        console.error("Error checking admin status:", error)
+        setIsAdmin(false)
+      }
+    }
+
+    // Check immediately
+    checkAdminStatus()
+
+    // Set up an event listener for storage changes
+    window.addEventListener("storage", checkAdminStatus)
+
+    // Clean up
+    return () => {
+      window.removeEventListener("storage", checkAdminStatus)
+    }
+  }, [])
 
   return (
     <nav className="navbar" onMouseEnter={() => setIsNavbarOpen(true)} onMouseLeave={() => setIsNavbarOpen(false)}>
@@ -129,6 +161,35 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
             <span>Tasks</span>
           </Link>
         </li>
+        {isAdmin && (
+          <li className={activePage === "add-task" ? "active" : ""} onClick={() => setActivePage("add-task")}>
+            <Link to="/add-task" onClick={() => setIsNavbarOpen(false)}>
+              <i className="fas fa-plus">
+                <svg
+                  width="40px"
+                  height="40px"
+                  viewBox="-7.2 -7.2 38.40 38.40"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  stroke="#000000"
+                  strokeWidth="0.336"
+                >
+                  <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+                  <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+                  <g id="SVGRepo_iconCarrier">
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22ZM12 8.25C12.4142 8.25 12.75 8.58579 12.75 9V11.25H15C15.4142 11.25 15.75 11.5858 15.75 12C15.75 12.4142 15.4142 12.75 15 12.75H12.75L12.75 15C12.75 15.4142 12.4142 15.75 12 15.75C11.5858 15.75 11.25 15.4142 11.25 15V12.75H9C8.58579 12.75 8.25 12.4142 8.25 12C8.25 11.5858 8.58579 11.25 9 11.25H11.25L11.25 9C11.25 8.58579 11.5858 8.25 12 8.25Z"
+                      fill="#1C274C"
+                    ></path>
+                  </g>
+                </svg>
+              </i>
+              <span>Add Task</span>
+            </Link>
+          </li>
+        )}
         <li className={activePage === "profile" ? "active" : ""} onClick={() => setActivePage("profile")}>
           <Link to="/profile" onClick={() => setIsNavbarOpen(false)}>
             <i className="fas fa-cogs">
@@ -167,36 +228,42 @@ function Navbar({ activePage, setActivePage, toggleFilter, showFilter, selectedF
             <span>Profile</span>
           </Link>
         </li>
-        <li className={activePage === "login" ? "active" : ""} onClick={() => {setActivePage("login"); logout()}}>
-            {" "}
-            <i className="fas fa-sign-out-alt">
-              <svg
-                width="40px"
-                height="40px"
-                viewBox="-7.2 -7.2 38.40 38.40"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                stroke="#1C274C"
-                strokeWidth="0.00024000000000000003"
-              >
-                <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-                <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
-                <g id="SVGRepo_iconCarrier">
-                  {" "}
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M16.125 12C16.125 11.5858 15.7892 11.25 15.375 11.25L4.40244 11.25L6.36309 9.56944C6.67759 9.29988 6.71401 8.8264 6.44444 8.51191C6.17488 8.19741 5.7014 8.16099 5.38691 8.43056L1.88691 11.4306C1.72067 11.573 1.625 11.7811 1.625 12C1.625 12.2189 1.72067 12.427 1.88691 12.5694L5.38691 15.5694C5.7014 15.839 6.17488 15.8026 6.44444 15.4881C6.71401 15.1736 6.67759 14.7001 6.36309 14.4306L4.40244 12.75L15.375 12.75C15.7892 12.75 16.125 12.4142 16.125 12Z"
-                    fill="#1C274C"
-                  ></path>{" "}
-                  <path
-                    d="M9.375 8C9.375 8.70219 9.375 9.05329 9.54351 9.3055C9.61648 9.41471 9.71025 9.50848 9.81946 9.58145C10.0717 9.74996 10.4228 9.74996 11.125 9.74996L15.375 9.74996C16.6176 9.74996 17.625 10.7573 17.625 12C17.625 13.2426 16.6176 14.25 15.375 14.25L11.125 14.25C10.4228 14.25 10.0716 14.25 9.8194 14.4185C9.71023 14.4915 9.6165 14.5852 9.54355 14.6944C9.375 14.9466 9.375 15.2977 9.375 16C9.375 18.8284 9.375 20.2426 10.2537 21.1213C11.1324 22 12.5464 22 15.3748 22L16.3748 22C19.2032 22 20.6174 22 21.4961 21.1213C22.3748 20.2426 22.3748 18.8284 22.3748 16L22.3748 8C22.3748 5.17158 22.3748 3.75736 21.4961 2.87868C20.6174 2 19.2032 2 16.3748 2L15.3748 2C12.5464 2 11.1324 2 10.2537 2.87868C9.375 3.75736 9.375 5.17157 9.375 8Z"
-                    fill="#1C274C"
-                  ></path>{" "}
-                </g>
-              </svg>
-            </i>
-            <span>Logout</span>
+        <li
+          className={activePage === "login" ? "active" : ""}
+          onClick={() => {
+            setActivePage("login")
+            logout()
+          }}
+        >
+          {" "}
+          <i className="fas fa-sign-out-alt">
+            <svg
+              width="40px"
+              height="40px"
+              viewBox="-7.2 -7.2 38.40 38.40"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              stroke="#1C274C"
+              strokeWidth="0.00024000000000000003"
+            >
+              <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
+              <g id="SVGRepo_tracerCarrier" strokeLinecap="round" strokeLinejoin="round"></g>
+              <g id="SVGRepo_iconCarrier">
+                {" "}
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M16.125 12C16.125 11.5858 15.7892 11.25 15.375 11.25L4.40244 11.25L6.36309 9.56944C6.67759 9.29988 6.71401 8.8264 6.44444 8.51191C6.17488 8.19741 5.7014 8.16099 5.38691 8.43056L1.88691 11.4306C1.72067 11.573 1.625 11.7811 1.625 12C1.625 12.2189 1.72067 12.427 1.88691 12.5694L5.38691 15.5694C5.7014 15.839 6.17488 15.8026 6.44444 15.4881C6.71401 15.1736 6.67759 14.7001 6.36309 14.4306L4.40244 12.75L15.375 12.75C15.7892 12.75 16.125 12.4142 16.125 12Z"
+                  fill="#1C274C"
+                ></path>{" "}
+                <path
+                  d="M9.375 8C9.375 8.70219 9.375 9.05329 9.54351 9.3055C9.61648 9.41471 9.71025 9.50848 9.81946 9.58145C10.0717 9.74996 10.4228 9.74996 11.125 9.74996L15.375 9.74996C16.6176 9.74996 17.625 10.7573 17.625 12C17.625 13.2426 16.6176 14.25 15.375 14.25L11.125 14.25C10.4228 14.25 10.0716 14.25 9.8194 14.4185C9.71023 14.4915 9.6165 14.5852 9.54355 14.6944C9.375 14.9466 9.375 15.2977 9.375 16C9.375 18.8284 9.375 20.2426 10.2537 21.1213C11.1324 22 12.5464 22 15.3748 22L16.3748 22C19.2032 22 20.6174 22 21.4961 21.1213C22.3748 20.2426 22.3748 18.8284 22.3748 16L22.3748 8C22.3748 5.17158 22.3748 3.75736 21.4961 2.87868C20.6174 2 20.2032 2 16.3748 2L15.3748 2C12.5464 2 11.1324 2 10.2537 2.87868C9.375 3.75736 9.375 5.17157 9.375 8Z"
+                  fill="#1C274C"
+                ></path>{" "}
+              </g>
+            </svg>
+          </i>
+          <span>Logout</span>
         </li>
       </ul>
     </nav>
