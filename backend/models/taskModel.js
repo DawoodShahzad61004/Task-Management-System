@@ -40,6 +40,16 @@ exports.userDetails = async userId => {
     throw error;
   }
 };
+// Get admin details
+exports.getAdminDetails = async (adminId) => {
+  const pool = await poolPromise;
+  const result = await pool
+    .request()
+    .input("admin_id", sql.Int, adminId)
+    .execute("getAdminInfo"); // updated name
+  return result.recordset[0];
+};
+
 // Check user role
 exports.checkUser = async userId => {
   try {

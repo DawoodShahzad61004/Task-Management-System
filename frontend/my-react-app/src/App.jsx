@@ -7,6 +7,7 @@ import LoginPage from "./loginpage"
 import TasksPage from "./Taskspage"
 import ProfilePage from "./profilepage"
 import Navbar from "./Navbar"
+import AddTask from "./add-task.jsx"
 import { useAuth } from "../context/AuthContext.jsx"
 
 function ProtectedRoute({ children }) {
@@ -64,7 +65,14 @@ function App() {
               }
               onEnter={() => setActivePage("profile")}
             />
-
+            <Route
+              path="/add-task"
+              element={
+                <ProtectedRoute>
+                  <AddTask />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/login" />} />
           </Routes>
         </div>

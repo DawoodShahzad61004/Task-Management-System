@@ -25,6 +25,27 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.getAdminDetails = async (req, res) => {
+  try {
+    const { admin_id } = req.body;
+
+    if (!admin_id) {
+      return res.status(400).json({ error: "admin_id is required" });
+    }
+
+    const result = await taskModel.getAdminDetails(admin_id);
+
+    if (!result) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error in getAdminDetails:", error);
+    res.status(500).json({ error: "Failed to fetch admin details" });
+  }
+};
+
 exports.userDetails = async (req, res) => {
   try {
     const userId = global.loggedInUser;

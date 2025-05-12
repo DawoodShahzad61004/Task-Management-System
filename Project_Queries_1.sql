@@ -663,6 +663,35 @@ BEGIN
     END
 END;
 
+GO
+GO
+CREATE PROCEDURE getAdminInfo
+    @admin_id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @infoID INT;
+
+    SELECT @infoID = infoID
+    FROM Admins
+    WHERE admin_id = @admin_id;
+
+    IF @infoID IS NULL
+    BEGIN
+        PRINT 'Admin not found.';
+        RETURN -1;
+    END
+
+    SELECT 
+        CONCAT(fName, ' ', lName) AS FullName,
+        email
+    FROM PersonnelInfo
+    WHERE infoID = @infoID;
+END;
+
+
+EXEC getAdminInfo @admin_id = 1;
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo
