@@ -1,9 +1,9 @@
 use master 
 GO
-ALTER DATABASE Project_DB
-SET SINGLE_USER
-WITH ROLLBACK IMMEDIATE;
-GO
+--ALTER DATABASE Project_DB
+--SET SINGLE_USER
+--WITH ROLLBACK IMMEDIATE;
+--GO
 drop database Project_DB;
 go
 
@@ -100,19 +100,20 @@ INSERT INTO PersonnelInfo (fName, lName, email, password_hash, created_at, conta
 
 -- Insert values into Admins (5 Admins)
 INSERT INTO Admins (infoID, ordersAssigned) VALUES 
-(1, 3), -- Ali Raza
-(2, 2), -- Sara Khan
-(3, 4), -- Hamza Malik
-(4, 2), -- Ayesha Ahmed
-(5, 3); -- Usman Ali
+(1, 6), -- Ali Raza
+(2, 6), -- Sara Khan
+(3, 6), -- Hamza Malik
+(4, 5), -- Ayesha Ahmed
+(5, 5); -- Usman Ali
+
 
 -- Insert values into Employees
 INSERT INTO Employees (ordersAccepted, ordersCancelled, ordersSubmittedLate, infoID) VALUES 
-(3, 1, 1, 6),  -- Bilal Hassan (Frontend)
-(4, 0, 2, 7),  -- Zainab Iqbal (Backend)
-(2, 2, 1, 8),  -- Taha Rehman (Code Tester)
-(5, 1, 0, 9),  -- Mehak Raza (DB Handler)
-(3, 0, 1, 10); -- Hassan Shah (Frontend)
+(1, 1, 1, 6),  -- Bilal Hassan (Frontend)
+(1, 1, 2, 7),  -- Zainab Iqbal (Backend)
+(2, 1, 1, 8),  -- Taha Rehman (Code Tester)
+(2, 1, 1, 9),  -- Mehak Raza (DB Handler)
+(2, 1, 1, 10); -- Hassan Shah (Frontend)
 
 -- Insert values into Orders (Tasks assigned by different admins)
 INSERT INTO Orders (title, [description], [status], [priority], created_at, deadline, admin_id) VALUES 
@@ -125,6 +126,46 @@ INSERT INTO Orders (title, [description], [status], [priority], created_at, dead
 ('Backend Logic', 'Implement business logic.', 'Completed', 'High', DEFAULT, '2025-04-05', 2), -- Sara Khan assigned
 ('Security Testing', 'Perform penetration testing.', 'In Progress', 'Medium', DEFAULT, '2025-04-25', 3); -- Hamza Malik assigned
 
+-- EMPLOYEE 1
+INSERT INTO Orders (title, description, deadline, priority, status, admin_id)
+VALUES 
+('Task 1A', 'Completed task for Emp 1', '2025-05-30', 'High', 'Completed', 1),
+('Task 1B', 'Cancelled task for Emp 1', '2025-05-31', 'Medium', 'Cancelled', 2),
+('Task 1C', 'Pending task for Emp 1', '2025-06-01', 'Low', 'Pending', 3),
+('Task 1D', 'In progress task for Emp 1', '2025-06-02', 'High', 'In Progress', 4);
+
+-- EMPLOYEE 2
+INSERT INTO Orders (title, description, deadline, priority, status, admin_id)
+VALUES 
+('Task 2A', 'Completed task for Emp 2', '2025-05-30', 'High', 'Completed', 5),
+('Task 2B', 'Cancelled task for Emp 2', '2025-05-31', 'Medium', 'Cancelled', 1),
+('Task 2C', 'Pending task for Emp 2', '2025-06-01', 'Low', 'Pending', 2),
+('Task 2D', 'In progress task for Emp 2', '2025-06-02', 'High', 'In Progress', 3);
+
+-- EMPLOYEE 3
+INSERT INTO Orders (title, description, deadline, priority, status, admin_id)
+VALUES 
+('Task 3A', 'Completed task for Emp 3', '2025-05-30', 'High', 'Completed', 4),
+('Task 3B', 'Cancelled task for Emp 3', '2025-05-31', 'Medium', 'Cancelled', 5),
+('Task 3C', 'Pending task for Emp 3', '2025-06-01', 'Low', 'Pending', 1),
+('Task 3D', 'In progress task for Emp 3', '2025-06-02', 'High', 'In Progress', 2);
+
+-- EMPLOYEE 4
+INSERT INTO Orders (title, description, deadline, priority, status, admin_id)
+VALUES 
+('Task 4A', 'Completed task for Emp 4', '2025-05-30', 'High', 'Completed', 3),
+('Task 4B', 'Cancelled task for Emp 4', '2025-05-31', 'Medium', 'Cancelled', 4),
+('Task 4C', 'Pending task for Emp 4', '2025-06-01', 'Low', 'Pending', 5),
+('Task 4D', 'In progress task for Emp 4', '2025-06-02', 'High', 'In Progress', 1);
+
+-- EMPLOYEE 5
+INSERT INTO Orders (title, description, deadline, priority, status, admin_id)
+VALUES 
+('Task 5A', 'Completed task for Emp 5', '2025-05-30', 'High', 'Completed', 2),
+('Task 5B', 'Cancelled task for Emp 5', '2025-05-31', 'Medium', 'Cancelled', 3),
+('Task 5C', 'Pending task for Emp 5', '2025-06-01', 'Low', 'Pending', 4),
+('Task 5D', 'In progress task for Emp 5', '2025-06-02', 'High', 'In Progress', 5);
+
 -- Insert values into Order_Assignments (Tasks assigned to employees)
 INSERT INTO Order_Assignments (order_id, employee_id, assigned_at, completed_at) VALUES 
 (1, 1, DEFAULT, NULL), -- Bilal (Frontend) working on Homepage UI
@@ -135,6 +176,16 @@ INSERT INTO Order_Assignments (order_id, employee_id, assigned_at, completed_at)
 (6, 1, DEFAULT, NULL), -- Bilal (Frontend) working on Dashboard UI
 (7, 2, DEFAULT, DEFAULT), -- Zainab (Backend) completed Backend Logic
 (8, 3, DEFAULT, NULL); -- Taha (Code Tester) performing Security Testing
+
+-- Assign Orders to Employees
+INSERT INTO Order_Assignments (order_id, employee_id)
+VALUES 
+(1, 1), (2, 1), (3, 1), (4, 1),
+(5, 2), (6, 2), (7, 2), (8, 2),
+(9, 3), (10, 3), (11, 3), (12, 3),
+(13, 4), (14, 4), (15, 4), (16, 4),
+(17, 5), (18, 5), (19, 5), (20, 5);
+
 
 select * from PersonnelRank
 select * from PersonnelInfo
@@ -233,7 +284,7 @@ begin
 end;
 go
 
-exec new_task 'Test Task 1.0', 'Description 1.0', '2025-05-10', 'High', 'Pending', 4, 'bilal.hassan@fast.edu.pk'
+--exec new_task 'Test Task 1.0', 'Description 1.0', '2025-05-10', 'High', 'Pending', 4, 'bilal.hassan@fast.edu.pk'
 
 go --update the task 
 create procedure update_status
@@ -518,6 +569,8 @@ BEGIN
     -- If no match found for userId and email, return NULL
     RETURN NULL;  -- Invalid user
 END;
+
+go
 
 CREATE PROCEDURE GetUserDetails
     @userId INT, 

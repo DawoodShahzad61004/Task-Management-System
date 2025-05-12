@@ -51,11 +51,9 @@ function ProfilePage({ setActivePage }) {
       //console.log("Fetched User Details:", data);
       setUserDetails(data);
 
-      let value = data.ordersAccepted;
-      if (userRole === 1)
-        value = userDetails.ordersAssigned;
-      else if (userRole === 0)
-        value = userDetails.ordersAccepted;
+      let value = 0;
+      if (userRole === 1) value = userDetails.ordersAssigned;
+      else if (userRole === 0) value = userDetails.ordersAccepted;
 
       setUserData({
         name: `${userDetails.fName} ${userDetails.lName}` || "John Doe",
@@ -148,7 +146,7 @@ function ProfilePage({ setActivePage }) {
               onMouseEnter={() => setHoveredStat("assigned")}
               onMouseLeave={() => setHoveredStat(null)}
             >
-              <h4>Accepted Tasks</h4>
+              <h4>In Progress Tasks</h4>
               <div className="progress-wrapper">
                 <CircularProgressbar
                   value={userData.acceptedTasks}
@@ -167,7 +165,7 @@ function ProfilePage({ setActivePage }) {
                   })}
                 />
               </div>
-              <p className="stat-description">Total tasks accepted by you</p>
+              <p className="stat-description">Total tasks in progress</p>
             </div>
 
             <div
