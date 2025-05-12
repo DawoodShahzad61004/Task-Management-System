@@ -1,6 +1,5 @@
 use master 
 GO
-<<<<<<< HEAD
 -- ALTER DATABASE Project_DB
 -- SET SINGLE_USER
 -- WITH ROLLBACK IMMEDIATE;
@@ -10,12 +9,6 @@ GO
 -- SET MULTI_USER;
 --GO
 
-=======
---ALTER DATABASE Project_DB
---SET SINGLE_USER
---WITH ROLLBACK IMMEDIATE;
---GO
->>>>>>> 47801ebc6576dbf71e82b2580fce7ec75df96367
 drop database Project_DB;
 go
 
