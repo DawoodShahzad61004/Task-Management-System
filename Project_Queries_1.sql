@@ -1,4 +1,9 @@
 use master 
+GO
+ALTER DATABASE Project_DB
+SET SINGLE_USER
+WITH ROLLBACK IMMEDIATE;
+GO
 drop database Project_DB;
 go
 
@@ -299,7 +304,7 @@ begin
     print 'Order priority updated successfully';
 	return 1;
 end;
-exec update_priority 1, 'Low', 1
+--exec update_priority 1, 'Low', 1
 
 go
 
@@ -317,7 +322,7 @@ begin
 	where [status] = @Sstatus
 end
 
-exec status_search 'Pending' , 1
+--exec status_search 'Pending' , 1
 
 go
 
@@ -347,7 +352,7 @@ begin
 	where os.employee_id = @employee_ID
 end
 
-exec employee_search 1 , 1
+--exec employee_search 1 , 1
 
 
 
@@ -394,7 +399,7 @@ begin
 	return 1;
 end
 
-exec Emp_update_status 2, 'Completed', 1
+--exec Emp_update_status 2, 'Completed', 1
 
 go -- in progress status
 create procedure Emp_status_search
@@ -410,7 +415,7 @@ begin
 
 end
 
-exec Emp_status_search @eID = 1
+--exec Emp_status_search @eID = 1
 
 go
 -- pending status

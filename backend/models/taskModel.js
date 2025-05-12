@@ -27,13 +27,13 @@ exports.userDetails = async userId => {
     request.input("userId", sql.Int, userId);
     request.input("userRole", sql.Int, global.loggedInUserRole);
 
-    console.log("Parameters passed to GetUserDetails stored procedure:", {
-      userId,
-      userRole: global.loggedInUserRole
-    });
+    // console.log("Parameters passed to GetUserDetails stored procedure:", {
+    //   userId,
+    //   userRole: global.loggedInUserRole
+    // });
     const result = await request.execute("GetUserDetails");
 
-    console.log("Stored procedure result:", result);
+    // console.log("Stored procedure result:", result);
     return result.recordset[0]; // Return the first record
   } catch (error) {
     console.error("Error in userDetails:", error);
@@ -65,15 +65,15 @@ exports.newTask = async (title, description, dueDate, priority, assignedTo) => {
     if (userRole != 1) {
       throw new Error("Not Logged-in as Admin");
     }
-    console.log("Parameters passed to new_task stored procedure:", {
-      title,
-      description,
-      dueDate,
-      priority,
-      status: "Pending",
-      loggedInUser: global.loggedInUser,
-      employee_email: assignedTo
-    });
+    // console.log("Parameters passed to new_task stored procedure:", {
+    //   title,
+    //   description,
+    //   dueDate,
+    //   priority,
+    //   status: "Pending",
+    //   loggedInUser: global.loggedInUser,
+    //   employee_email: assignedTo
+    // });
     const result = await pool
       .request()
       .input("title", sql.VarChar, title)
@@ -87,7 +87,7 @@ exports.newTask = async (title, description, dueDate, priority, assignedTo) => {
     if (result.returnValue == 1) {
       return { message: "Task created successfully" };
     }
-    console.log("Stored procedure result:", result);
+    // console.log("Stored procedure result:", result);
     return { message: "Task creation failed - No such employee exists" };
   } catch (err) {
     console.error("Error in newTask:", err);
@@ -132,11 +132,11 @@ exports.updatePriority = async (taskId, priority) => {
     if (userRole != 1) {
       throw new Error("Not Logged-in as Admin");
     }
-    console.log("Parameters passed to update_priority stored procedure:", {
-      loggedInUser: global.loggedInUser,
-      new_priority: priority,
-      order_id: taskId
-    });
+    // console.log("Parameters passed to update_priority stored procedure:", {
+    //   loggedInUser: global.loggedInUser,
+    //   new_priority: priority,
+    //   order_id: taskId
+    // });
     const result = await pool
       .request()
       .input("adminId", sql.Int, global.loggedInUser)
@@ -166,10 +166,10 @@ exports.statusSearch = async status => {
     if (userRole != 1) {
       throw new Error("Not Logged-in as Admin");
     }
-    console.log("Parameters passed to status_search stored procedure:", {
-      loggedInUser: global.loggedInUser,
-      Sstatus: status
-    });
+    // console.log("Parameters passed to status_search stored procedure:", {
+    //   loggedInUser: global.loggedInUser,
+    //   Sstatus: status
+    // });
     const result = await pool
       .request()
       .input("adminId", sql.Int, global.loggedInUser)
@@ -195,7 +195,7 @@ exports.dateSearch = async toDate => {
       .input("Ddate", sql.Date, toDate)
       .input("adminID", sql.Int, global.loggedInUser)
       .execute("date_search");
-    console.log("Stored procedure result:", result);
+    //console.log("Stored procedure result:", result);
     return result.recordset;
   } catch (err) {
     console.error("Error in dateSearch:", err);
@@ -237,12 +237,12 @@ exports.empUpdateStatus = async (taskId, status) => {
       .input("new_status", sql.VarChar, status)
       .input("orderID", sql.Int, taskId)
       .execute("Emp_update_status");
-    console.log("Parameters passed to Emp_update_status stored procedure:", {
-      loggedInUser: global.loggedInUser,
-      new_status: status,
-      orderID: taskId
-    });
-    console.log("Stored procedure result:", result);
+    // console.log("Parameters passed to Emp_update_status stored procedure:", {
+    //   loggedInUser: global.loggedInUser,
+    //   new_status: status,
+    //   orderID: taskId
+    // });
+    // console.log("Stored procedure result:", result);
 
     if (result.returnValue == 1)
       return { message: "Order status updated successfully" };
@@ -275,7 +275,7 @@ exports.empStatusSearch = async () => {
       .request()
       .input("employeeId", sql.Int, global.loggedInUser)
       .execute("Emp_status_search");
-    console.log(result);
+    //console.log(result);
     return result.recordset;
   } catch (err) {
     console.error("Error in empStatusSearch:", err);
@@ -295,7 +295,7 @@ exports.empPStatusSearch = async () => {
       .request()
       .input("employeeId", sql.Int, global.loggedInUser)
       .execute("Emp_Pstatus_search");
-    console.log(result);
+    //console.log(result);
     return result.recordset;
   } catch (err) {
     console.error("Error in empPStatusSearch:", err);
