@@ -17,6 +17,7 @@ go
 use Project_DB;
 go
 
+
 create table PersonnelRank (
 	rankID int primary Key identity(1,1),
 	[rank] varchar(20) check ([rank] in ('Team Lead', 'Frontend Developer', 'Backend Developer', 'Code Tester', 'DB Handler')),
@@ -285,6 +286,10 @@ begin
         SET ordersAssigned = ordersAssigned + 1
         WHERE admin_id = @admin_id;
 
+		update Employees
+		set ordersAccepted = ordersAccepted + 1
+		where employee_id = @employee_id
+
 		return 1;
 	end try
 	begin catch
@@ -293,8 +298,7 @@ begin
 	end catch
 end;
 go
-
-exec new_task 'Test Task 1.1', 'Description 1.1', '2025-05-10', 'High', 'Pending', 1, 'Zainab.Iqbal@fast.edu.pk'
+--exec new_task 'Test Task 1.1', 'Description 1.1', '2025-05-10', 'High', 'Pending', 1, 'Zainab.Iqbal@fast.edu.pk'
 
 go --update the task 
 CREATE PROCEDURE update_status
@@ -489,6 +493,13 @@ begin
  	return 0;
 	end
 
+	-- incrementing cancelled order
+	IF LOWER(@new_status) = 'cancelled'
+	begin
+	update Employees
+	set ordersCancelled = ISNULL(ordersCancelled, 0) + 1
+	where employee_id = @employeeId
+	end
 
     update Orders
     set [status] = @new_status
@@ -497,119 +508,120 @@ begin
     print 'Order status updated successfully';
 	return 1;
 end
+--select * from Employees
+--select * from Order_Assignments
+--exec Emp_update_status 1, 'Cancelled', 1
+--
+--go -- in progress status
+--create procedure Emp_status_search
+--	@employeeId INT
+--as
+--begin
+--	
+--
+--	select O.*
+--	from Orders O
+--	join Order_Assignments os on os.order_id = O.order_id
+--	where O.[status] = 'In progress' AND os.employee_id = @employeeId
+--
+--end
+--
+----exec Emp_status_search @eID = 1
+--
+--go
+---- pending status
+--create procedure Emp_Pstatus_search
+--	@employeeId INT
+--as
+--begin
+--	
+--
+--	select O.*
+--	from Orders O
+--	join Order_Assignments os on os.order_id = O.order_id
+--	where O.[status] = 'Pending' AND os.employee_id = @employeeId
+--
+--end
+--
+--
+--go--accepting or declining functionality
+--create procedure acp_dec_status
+--	@employeeID int,
+--    @orderID int,
+--
+--	@claim varchar(20)
+--AS
+--begin
+--
+--	declare @assigned_emp int;
+--
+--	select @assigned_emp = employee_id FROM Order_Assignments WHERE order_id = @orderID;
+--	if @assigned_emp is null
+--	begin
+--	print 'Order id is not found'
+--	return -1;
+--	end
+--
+--	 if @assigned_emp <> @employeeID
+--	 begin
+--	 print 'Access Denied: You can only update orders assigned to you.';
+--	 return -2;
+--	 end
+--
+--	 IF LOWER(@claim) not in ('accept', 'decline')
+--	 begin
+--	 print 'Invalid claim value. It should be Accept or Decline.';
+--	 return -3;
+--	 end
+--
+--	 IF LOWER(@claim) = 'accept'
+--	 begin
+--	 update Orders
+--     set [status] = 'In Progress'
+--     where order_id = @orderID;
+--	 UPDATE Employees
+--     SET ordersAccepted = ISNULL(ordersAccepted, 0) + 1
+--     WHERE employee_id = @employeeID;
+--
+--	 return 1;
+--	 end
+--	 IF LOWER(@claim) = 'decline'
+--	 begin
+--	 update Orders
+--     set [status] = 'Pending'
+--     where order_id = @orderID;
+--	 
+--	 DECLARE @order_status VARCHAR(50);
+--
+--	 SELECT @order_status = [status] 
+--     FROM Orders 
+--     WHERE order_id = @orderID;
+--
+--	 IF LOWER(@order_status) = 'in progress'
+--     BEGIN
+--            UPDATE Employees
+--            SET 
+--                ordersAccepted = CASE 
+--                                    WHEN ISNULL(ordersAccepted, 0) > 0 
+--                                    THEN ordersAccepted - 1 
+--                                    ELSE 0 
+--                                 END,
+--                ordersCancelled = ISNULL(ordersCancelled, 0) + 1
+--            WHERE employee_id = @employeeID;
+--		END
+--        ELSE
+--        BEGIN
+--            UPDATE Employees
+--            SET ordersCancelled = ISNULL(ordersCancelled, 0) + 1
+--            WHERE employee_id = @employeeID;
+--        END
+--	 return 1;
+--	 end
+--
+--    print 'Decision updated successfully';
+--end
 
---exec Emp_update_status 2, 'Completed', 1
-
-go -- in progress status
-create procedure Emp_status_search
-	@employeeId INT
-as
-begin
-	
-
-	select O.*
-	from Orders O
-	join Order_Assignments os on os.order_id = O.order_id
-	where O.[status] = 'In progress' AND os.employee_id = @employeeId
-
-end
-
---exec Emp_status_search @eID = 1
-
-go
--- pending status
-create procedure Emp_Pstatus_search
-	@employeeId INT
-as
-begin
-	
-
-	select O.*
-	from Orders O
-	join Order_Assignments os on os.order_id = O.order_id
-	where O.[status] = 'Pending' AND os.employee_id = @employeeId
-
-end
-
-
-go--accepting or declining functionality
-create procedure acp_dec_status
-	@employeeID int,
-    @orderID int,
-
-	@claim varchar(20)
-AS
-begin
-
-	declare @assigned_emp int;
-
-	select @assigned_emp = employee_id FROM Order_Assignments WHERE order_id = @orderID;
-	if @assigned_emp is null
-	begin
-	print 'Order id is not found'
-	return -1;
-	end
-
-	 if @assigned_emp <> @employeeID
-	 begin
-	 print 'Access Denied: You can only update orders assigned to you.';
-	 return -2;
-	 end
-
-	 IF LOWER(@claim) not in ('accept', 'decline')
-	 begin
-	 print 'Invalid claim value. It should be Accept or Decline.';
-	 return -3;
-	 end
-
-	 IF LOWER(@claim) = 'accept'
-	 begin
-	 update Orders
-     set [status] = 'In Progress'
-     where order_id = @orderID;
-	 UPDATE Employees
-     SET ordersAccepted = ISNULL(ordersAccepted, 0) + 1
-     WHERE employee_id = @employeeID;
-
-	 return 1;
-	 end
-	 IF LOWER(@claim) = 'decline'
-	 begin
-	 update Orders
-     set [status] = 'Pending'
-     where order_id = @orderID;
-	 
-	 DECLARE @order_status VARCHAR(50);
-
-	 SELECT @order_status = [status] 
-     FROM Orders 
-     WHERE order_id = @orderID;
-
-	 IF LOWER(@order_status) = 'in progress'
-     BEGIN
-            UPDATE Employees
-            SET 
-                ordersAccepted = CASE 
-                                    WHEN ISNULL(ordersAccepted, 0) > 0 
-                                    THEN ordersAccepted - 1 
-                                    ELSE 0 
-                                 END,
-                ordersCancelled = ISNULL(ordersCancelled, 0) + 1
-            WHERE employee_id = @employeeID;
-		END
-        ELSE
-        BEGIN
-            UPDATE Employees
-            SET ordersCancelled = ISNULL(ordersCancelled, 0) + 1
-            WHERE employee_id = @employeeID;
-        END
-	 return 1;
-	 end
-
-    print 'Decision updated successfully';
-end
-
-
+--drop procedure acp_dec_status
 --exec acp_dec_status 2,29,'accept'
 
 --select * from Employees
@@ -869,3 +881,4 @@ BEGIN
         ROLLBACK TRANSACTION;
     END
 END;
+
