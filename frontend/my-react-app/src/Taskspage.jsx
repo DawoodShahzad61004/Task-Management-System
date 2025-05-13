@@ -6,7 +6,7 @@ import {
   FaCalendarAlt,
   FaClock,
   FaExclamationTriangle,
-  FaSpinner,
+  FaSpinner
 } from "react-icons/fa";
 
 function TasksPage() {
@@ -17,6 +17,8 @@ function TasksPage() {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [adminDetails, setAdminDetails] = useState(null);
   const [statusUpdating, setStatusUpdating] = useState(false);
+  const [isTaskOwner, setIsTaskOwner] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchTasks = async () => {
     setIsLoading(true);
@@ -34,15 +36,22 @@ function TasksPage() {
 
       const role = await checkUserRole(user);
       localStorage.setItem("userRole", JSON.stringify(role));
+      const loggedInUserId = JSON.parse(localStorage.getItem("user"));
 
       let urlPending = "";
       let urlInProgress = "";
+      let urlCompleted = "";
+      let urlCancelled = "";
 
       if (role === 1) {
         urlPending =
           "http://localhost:5000/api/tasks/search/status?status=Pending";
         urlInProgress =
           "http://localhost:5000/api/tasks/search/status?status=In Progress";
+        urlCompleted =
+          "http://localhost:5000/api/tasks/search/status?status=Completed";
+        urlCancelled =
+          "http://localhost:5000/api/tasks/search/status?status=Cancelled";
       } else if (role === 0) {
         urlPending =
           "http://localhost:5000/api/tasks/employee/search/partial-status";
@@ -50,11 +59,12 @@ function TasksPage() {
           "http://localhost:5000/api/tasks/employee/search/status";
       }
 
-      const [res1, res2] = await Promise.all([
-        fetch(urlPending),
-        fetch(urlInProgress),
-      ]);
+      const res1 = await fetch(urlPending);
+      const res2 = await fetch(urlInProgress);
+
+      // For non-admin, we only need Pending and In Progress tasks
       const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+
       const transformTasks = (data) =>
         Array.isArray(data)
           ? data.map((task) => ({
@@ -66,14 +76,25 @@ function TasksPage() {
               description: task.description || "No description",
               deadline: formatDate(task.deadline) || "No deadline",
               createdAt: formatDateTime(task.created_at) || "Unknown",
-              adminId: task.admin_id,
+              adminId: task.admin_id
             }))
           : [];
 
-      const combinedTasks = [
-        ...transformTasks(data1),
-        ...transformTasks(data2),
-      ];
+      let combinedTasks = [];
+      if (role === 1) {
+        const res3 = await fetch(urlCompleted);
+        const res4 = await fetch(urlCancelled);
+        const [data3, data4] = await Promise.all([res3.json(), res4.json()]);
+        combinedTasks = [
+          ...transformTasks(data1),
+          ...transformTasks(data2),
+          ...transformTasks(data3), // Completed tasks
+          ...transformTasks(data4) // Cancelled tasks
+        ];
+      } else if (role === 0) {
+        // Only combine Pending and In Progress for non-admin
+        combinedTasks = [...transformTasks(data1), ...transformTasks(data2)];
+      }
       combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
       setTasks(combinedTasks);
     } catch (error) {
@@ -90,20 +111,20 @@ function TasksPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ admin_id: adminId }),
+          body: JSON.stringify({ admin_id: adminId })
         }
       );
       if (!response.ok) throw new Error("Failed to fetch admin details");
       const data = await response.json();
       return {
         name: data.FullName,
-        email: data.email,
+        email: data.email
       };
     } catch (error) {
       console.error("Error fetching admin details:", error);
       return {
         name: "Unknown Admin",
-        email: "admin@example.com",
+        email: "admin@example.com"
       };
     }
   };
@@ -122,12 +143,21 @@ function TasksPage() {
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit",
+      minute: "2-digit"
     }).format(new Date(dateString));
   };
 
   const openTaskDetail = async (task) => {
     setSelectedTask(task);
+    const loggedInUserId = JSON.parse(localStorage.getItem("user"));
+    // Make sure we're comparing the same data types
+    const taskOwnerStatus = task.adminId === Number.parseInt(loggedInUserId);
+    setIsTaskOwner(taskOwnerStatus);
+    console.log("Task owner check:", {
+      userId: loggedInUserId,
+      adminId: task.adminId,
+      isOwner: taskOwnerStatus
+    });
     setIsPopupOpen(true);
     const adminData = await fetchAdminDetails(task.adminId);
     setAdminDetails(adminData);
@@ -156,8 +186,8 @@ function TasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           taskId: selectedTask.id,
-          status: newStatus,
-        }),
+          status: newStatus
+        })
       });
 
       if (!response.ok) {
@@ -188,8 +218,8 @@ function TasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           taskId: selectedTask.id,
-          priority: newPriority,
-        }),
+          priority: newPriority
+        })
       });
 
       if (!response.ok) throw new Error("Failed to update priority");
@@ -214,8 +244,8 @@ function TasksPage() {
         {
           method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
-          },
+            "Content-Type": "application/json"
+          }
         }
       );
 
@@ -258,6 +288,14 @@ function TasksPage() {
 
   const userRole = JSON.parse(localStorage.getItem("userRole"));
 
+  const filteredTasks = tasks.filter((task) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    return (
+      task.title.toLowerCase().includes(lowerSearch) ||
+      task.description.toLowerCase().includes(lowerSearch)
+    );
+  });
+
   return (
     <div className={`content ${isNavbarHovered ? "navbar-expanded" : ""}`}>
       <div className="tasks-container">
@@ -268,6 +306,8 @@ function TasksPage() {
               type="text"
               className="search-bar"
               placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
@@ -278,7 +318,7 @@ function TasksPage() {
             {isLoading ? (
               <p>Loading tasks...</p>
             ) : (
-              tasks.map((task, index) => (
+              filteredTasks.map((task, index) => (
                 <div
                   key={index}
                   className="task-item"
@@ -385,7 +425,19 @@ function TasksPage() {
                       </div>
                     </>
                   ) : (
-                    <p className="loading-text">Loading admin details...</p>
+                    <div
+                      className="loading-spinner-container"
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        padding: "15px"
+                      }}
+                    >
+                      <FaSpinner
+                        className="spinner-icon"
+                        style={{ fontSize: "1.5rem", color: "#3498db" }}
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -396,32 +448,44 @@ function TasksPage() {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Status:</span>
-                    <div className="status-dropdown-container">
-                      <div className="custom-select-wrapper">
-                        <select
-                          className={`custom-select ${selectedTask.status
-                            .toLowerCase()
-                            .replace(" ", "")}`}
-                          value={selectedTask.status}
-                          onChange={handleStatusChange}
-                          disabled={statusUpdating}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="In Progress">In Progress</option>
-                          <option value="Completed">Completed</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                        {statusUpdating && (
-                          <div className="spinner-container">
-                            <FaSpinner className="spinner-icon" />
-                          </div>
-                        )}
+                    {userRole === 0 || (userRole === 1 && isTaskOwner) ? (
+                      <div className="status-dropdown-container">
+                        <div className="custom-select-wrapper">
+                          <select
+                            className={`custom-select ${selectedTask.status
+                              .toLowerCase()
+                              .replace(" ", "")}`}
+                            value={selectedTask.status}
+                            onChange={handleStatusChange}
+                            disabled={statusUpdating}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                          {statusUpdating && (
+                            <div className="spinner-container">
+                              <FaSpinner className="spinner-icon" />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <span
+                        className={`task-status ${selectedTask.status
+                          .toLowerCase()
+                          .replace(" ", "")}`}
+                      >
+                        {selectedTask.status.charAt(0).toUpperCase() +
+                          selectedTask.status.slice(1)}
+                      </span>
+                    )}
                   </div>
+
                   <div className="detail-item">
                     <span className="detail-label">Priority:</span>
-                    {userRole === 1 ? (
+                    {userRole === 1 && isTaskOwner ? (
                       <select
                         className={`custom-select ${selectedTask.priority.toLowerCase()}`}
                         value={selectedTask.priority}
@@ -442,7 +506,7 @@ function TasksPage() {
                   </div>
                 </div>
               </div>
-              {userRole === 1 ? (
+              {userRole === 1 && isTaskOwner ? (
                 <div className="delete-button-wrapper">
                   <button
                     className="delete-button"
