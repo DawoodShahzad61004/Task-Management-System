@@ -13,6 +13,7 @@ function User_HomePage() {
   const [tasks, setTasks] = useState([]); // State to store tasks
   const [isLoading, setIsLoading] = useState(false); // Loading state
   const [lastName, setLastName] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const toggleFilter = () => setShowFilter(!showFilter);
 
@@ -157,6 +158,15 @@ function User_HomePage() {
     }
   }, []);
 
+  // Filter tasks based on search term
+  const filteredTasks = tasks.filter((task) => {
+    const lowerSearch = searchTerm.toLowerCase();
+    return (
+      task.title.toLowerCase().includes(lowerSearch) ||
+      task.description.toLowerCase().includes(lowerSearch)
+    );
+  });
+
   return (
     <div className="dashboard">
       <section className={`content ${isNavbarOpen ? "navbar-expanded" : ""}`}>
@@ -167,6 +177,8 @@ function User_HomePage() {
               type="text"
               className="search-bar"
               placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="filter-container">
               <FaFilter
@@ -210,29 +222,26 @@ function User_HomePage() {
           {isLoading ? (
             <p>Loading tasks...</p>
           ) : (
-            tasks.map((task, index) => (
+            filteredTasks.map((task, index) => (
               <div
                 key={index}
                 className={`task-card ${task.status.toLowerCase()}`}
               >
-                <div className="category-label">{task.orderID}</div>{" "}
-                {/* Corrected Order ID display */}
+                <div className="category-label">{task.orderID}</div>
                 <h4>{task.title}</h4>
-                <p>{task.description}</p> {/* Added description to be shown */}
+                <p>{task.description}</p>
                 <div className="tags">
-                  {/* Apply correct status class */}
                   <div
                     className={`task-status ${task.status
                       .replace(" ", "")
                       .toLowerCase()}`}
                   >
-                    <span>{task.status}</span> {/* Status tag */}
+                    <span>{task.status}</span>
                   </div>
-                  {/* Apply correct priority class */}
                   <div
                     className={`task-priority ${task.priority.toLowerCase()}`}
                   >
-                    <span>{task.priority}</span> {/* Priority tag */}
+                    <span>{task.priority}</span>
                   </div>
                 </div>
               </div>
