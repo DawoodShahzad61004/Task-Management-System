@@ -6,7 +6,7 @@ import {
   FaCalendarAlt,
   FaClock,
   FaExclamationTriangle,
-  FaSpinner
+  FaSpinner,
 } from "react-icons/fa";
 
 function TasksPage() {
@@ -52,7 +52,7 @@ function TasksPage() {
 
       const [res1, res2] = await Promise.all([
         fetch(urlPending),
-        fetch(urlInProgress)
+        fetch(urlInProgress),
       ]);
       const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
       const transformTasks = (data) =>
@@ -66,13 +66,13 @@ function TasksPage() {
               description: task.description || "No description",
               deadline: formatDate(task.deadline) || "No deadline",
               createdAt: formatDateTime(task.created_at) || "Unknown",
-              adminId: task.admin_id
+              adminId: task.admin_id,
             }))
           : [];
 
       const combinedTasks = [
         ...transformTasks(data1),
-        ...transformTasks(data2)
+        ...transformTasks(data2),
       ];
       combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
       setTasks(combinedTasks);
@@ -90,20 +90,20 @@ function TasksPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ admin_id: adminId })
+          body: JSON.stringify({ admin_id: adminId }),
         }
       );
       if (!response.ok) throw new Error("Failed to fetch admin details");
       const data = await response.json();
       return {
         name: data.FullName,
-        email: data.email
+        email: data.email,
       };
     } catch (error) {
       console.error("Error fetching admin details:", error);
       return {
         name: "Unknown Admin",
-        email: "admin@example.com"
+        email: "admin@example.com",
       };
     }
   };
@@ -122,7 +122,7 @@ function TasksPage() {
       month: "short",
       day: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     }).format(new Date(dateString));
   };
 
@@ -156,8 +156,8 @@ function TasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           taskId: selectedTask.id,
-          status: newStatus
-        })
+          status: newStatus,
+        }),
       });
 
       if (!response.ok) {
@@ -188,8 +188,8 @@ function TasksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           taskId: selectedTask.id,
-          priority: newPriority
-        })
+          priority: newPriority,
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to update priority");
@@ -203,6 +203,33 @@ function TasksPage() {
     } catch (error) {
       console.error("Error updating priority:", error);
       alert("Failed to update task priority. Please try again.");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      const orderId = selectedTask.orderID.replace(/\D/g, ""); // removes all non-digits
+      const response = await fetch(
+        `http://localhost:5000/api/tasks/${orderId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Order deleted successfully!");
+        // Optionally refresh list or redirect
+      } else {
+        alert(`Error: ${data.error || "Failed to delete order."}`);
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Something went wrong while deleting the order.");
     }
   };
 
@@ -415,14 +442,16 @@ function TasksPage() {
                   </div>
                 </div>
               </div>
-              <div className="delete-button-wrapper">
-                <button
-                  className="delete-button"
-                  onClick={() => alert("Delete action here")}
-                >
-                  Delete
-                </button>
-              </div>
+              {userRole === 1 ? (
+                <div className="delete-button-wrapper">
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete()} // pass orderId here
+                  >
+                    Delete
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
