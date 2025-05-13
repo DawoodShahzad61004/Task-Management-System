@@ -294,7 +294,7 @@ begin
 end;
 go
 
---exec new_task 'Test Task 1.0', 'Description 1.0', '2025-05-10', 'High', 'Pending', 4, 'bilal.hassan@fast.edu.pk'
+exec new_task 'Test Task 1.1', 'Description 1.1', '2025-05-10', 'High', 'Pending', 1, 'Zainab.Iqbal@fast.edu.pk'
 
 go --update the task 
 CREATE PROCEDURE update_status
@@ -567,6 +567,10 @@ begin
 	 update Orders
      set [status] = 'In Progress'
      where order_id = @orderID;
+	 UPDATE Employees
+     SET ordersAccepted = ISNULL(ordersAccepted, 0) + 1
+     WHERE employee_id = @employeeID;
+
 	 return 1;
 	 end
 	 IF LOWER(@claim) = 'decline'
@@ -579,6 +583,9 @@ begin
 
     print 'Decision updated successfully';
 end
+
+
+exec acp_dec_status 2,29,'accept'
 
 GO
 CREATE PROCEDURE CheckUserRole
