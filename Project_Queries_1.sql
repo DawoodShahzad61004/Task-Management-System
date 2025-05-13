@@ -578,6 +578,31 @@ begin
 	 update Orders
      set [status] = 'Pending'
      where order_id = @orderID;
+	 
+	 DECLARE @order_status VARCHAR(50);
+
+	 SELECT @order_status = [status] 
+     FROM Orders 
+     WHERE order_id = @orderID;
+
+	 IF LOWER(@order_status) = 'in progress'
+     BEGIN
+            UPDATE Employees
+            SET 
+                ordersAccepted = CASE 
+                                    WHEN ISNULL(ordersAccepted, 0) > 0 
+                                    THEN ordersAccepted - 1 
+                                    ELSE 0 
+                                 END,
+                ordersCancelled = ISNULL(ordersCancelled, 0) + 1
+            WHERE employee_id = @employeeID;
+		END
+        ELSE
+        BEGIN
+            UPDATE Employees
+            SET ordersCancelled = ISNULL(ordersCancelled, 0) + 1
+            WHERE employee_id = @employeeID;
+        END
 	 return 1;
 	 end
 
@@ -585,7 +610,9 @@ begin
 end
 
 
-exec acp_dec_status 2,29,'accept'
+--exec acp_dec_status 2,29,'accept'
+
+--select * from Employees
 
 GO
 CREATE PROCEDURE CheckUserRole
