@@ -12,10 +12,6 @@ exports.login = async (req, res) => {
       if (global.loggedInUserRole != 1 && global.loggedInUserRole != 0) {
         throw new Error("Invalid credentials");
       }
-      console.log("Logged in user role:", global.loggedInUserRole);
-      console.log("Email", global.loggedInUserMail);
-      console.log("Logged in user:", global.loggedInUser);
-      // console.log("Logged in user:", global.loggedInUser);
     }
 
     res.status(200).json(result);
@@ -61,8 +57,6 @@ exports.checkUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const roleId = await taskModel.checkUser(userId);
-
-    console.log("Role ID for user:", roleId);
 
     res.status(200).json({ roleId });
   } catch (error) {
@@ -146,7 +140,6 @@ exports.employeeSearch = async (req, res) => {
 exports.empUpdateStatus = async (req, res) => {
   try {
     const { taskId, status } = req.body;
-    console.log("In Controller File\nTask ID:", taskId, "Status:", status);
     const result = await taskModel.empUpdateStatus(taskId, status);
     res.status(200).json(result);
   } catch (error) {
@@ -200,3 +193,18 @@ exports.getEmployees = async (req, res) => {
   }
 };
 
+exports.deleteOrderAndUpdateStats = async (req, res) => {
+  const { orderId } = req.params;
+
+  try {
+    if (global.loggedInUserRole != 1) 
+      return res.status(403).json({ error: "Forbidden" });
+    
+    const result = await taskModel.deleteOrderAndUpdateStats(orderId);
+    
+    res.status(200).json({ message: "Order deleted and stats updated", result });
+  } catch (error) {
+    console.error("Error deleting order and updating stats:", error);
+    res.status(500).json({ error: "Failed to delete order or update stats" });
+  }
+};

@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 function AddTask() {
-  const [isNavbarOpen, setIsNavbarOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [employees, setEmployees] = useState([])
-  const navigate = useNavigate()
+  const [isNavbarOpen, setIsNavbarOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const navigate = useNavigate();
 
   const [taskData, setTaskData] = useState({
     title: "",
@@ -15,121 +15,122 @@ function AddTask() {
     deadline: "",
     priority: "Medium",
     employee_email: "",
-  })
+  });
 
-  const [formErrors, setFormErrors] = useState({})
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [formErrors, setFormErrors] = useState({});
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   // Fetch employees for assignment
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/tasks/employees")
+        const response = await fetch(
+          "http://localhost:5000/api/tasks/employees"
+        );
         if (response.ok) {
-          const data = await response.json()
-          setEmployees(data)
+          const data = await response.json();
+          setEmployees(data);
         }
       } catch (error) {
-        console.error("Error fetching employees:", error)
+        console.error("Error fetching employees:", error);
       }
-    }
+    };
 
-    fetchEmployees()
-  }, [])
+    fetchEmployees();
+  }, []);
 
   // Check if user is admin
   useEffect(() => {
     const checkAdminStatus = async () => {
-      const userRole = JSON.parse(localStorage.getItem("userRole"))
+      const userRole = JSON.parse(localStorage.getItem("userRole"));
       if (userRole !== 1) {
-        navigate("/")
+        navigate("/");
       }
-    }
+    };
 
-    checkAdminStatus()
-  }, [navigate])
+    checkAdminStatus();
+  }, [navigate]);
 
   // Monitor navbar hover state
   useEffect(() => {
-    const navbar = document.querySelector(".navbar")
+    const navbar = document.querySelector(".navbar");
     if (navbar) {
-      const isHovered = window.getComputedStyle(navbar).width === "250px"
-      setIsNavbarOpen(isHovered)
+      const isHovered = window.getComputedStyle(navbar).width === "250px";
+      setIsNavbarOpen(isHovered);
 
-      const handleMouseEnter = () => setIsNavbarOpen(true)
-      const handleMouseLeave = () => setIsNavbarOpen(false)
+      const handleMouseEnter = () => setIsNavbarOpen(true);
+      const handleMouseLeave = () => setIsNavbarOpen(false);
 
-      navbar.addEventListener("mouseenter", handleMouseEnter)
-      navbar.addEventListener("mouseleave", handleMouseLeave)
+      navbar.addEventListener("mouseenter", handleMouseEnter);
+      navbar.addEventListener("mouseleave", handleMouseLeave);
 
       return () => {
-        navbar.removeEventListener("mouseenter", handleMouseEnter)
-        navbar.removeEventListener("mouseleave", handleMouseLeave)
-      }
+        navbar.removeEventListener("mouseenter", handleMouseEnter);
+        navbar.removeEventListener("mouseleave", handleMouseLeave);
+      };
     }
-  }, [])
+  }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setTaskData({
       ...taskData,
       [name]: value,
-    })
+    });
 
     // Clear error when field is edited
     if (formErrors[name]) {
       setFormErrors({
         ...formErrors,
         [name]: "",
-      })
+      });
     }
-  }
+  };
 
   const validateForm = () => {
-    const errors = {}
+    const errors = {};
 
     if (!taskData.title.trim()) {
-      errors.title = "Title is required"
+      errors.title = "Title is required";
     }
 
     if (!taskData.description.trim()) {
-      errors.description = "Description is required"
+      errors.description = "Description is required";
     }
 
     if (!taskData.deadline) {
-      errors.deadline = "Deadline is required"
+      errors.deadline = "Deadline is required";
     } else {
-      const selectedDate = new Date(taskData.deadline)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      const selectedDate = new Date(taskData.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
       if (selectedDate < today) {
-        errors.deadline = "Deadline cannot be in the past"
+        errors.deadline = "Deadline cannot be in the past";
       }
     }
 
     if (!taskData.employee_email) {
-      errors.assignedTo = "Please select an employee"
+      errors.assignedTo = "Please select an employee";
     }
 
-    return errors
-  }
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Validate form
-    const errors = validateForm()
+    const errors = validateForm();
     if (Object.keys(errors).length > 0) {
-      setFormErrors(errors)
-      return
+      setFormErrors(errors);
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const adminId = JSON.parse(localStorage.getItem("user"))
-      console.log("Admin ID:", adminId)
+      const adminId = JSON.parse(localStorage.getItem("user"));
 
       const response = await fetch("http://localhost:5000/api/tasks/new", {
         method: "POST",
@@ -139,23 +140,13 @@ function AddTask() {
         body: JSON.stringify({
           title: taskData.title,
           description: taskData.description,
-          deadline: taskData.deadline, 
+          dueDate: taskData.deadline, 
           priority: taskData.priority,
-          employee_email: taskData.employee_email
+          assignedTo: taskData.employee_email,
         }),
-      })
-      console.log("Data sent:", {
-        title: taskData.title,
-        description: taskData.description,
-        deadline: taskData.deadline,
-        priority: taskData.priority,
-        employee_email: taskData.employee_email,
-        admin_id: adminId
-      })
-      console.log("Response status:", response.status)
+      });
       if (response.ok) {
-         console.log("✅ Task created in DB!");
-        setSubmitSuccess(true)
+        setSubmitSuccess(true);
         // Reset form
         setTaskData({
           title: "",
@@ -163,23 +154,23 @@ function AddTask() {
           deadline: "",
           priority: "Medium",
           employee_email: "",
-        })
+        });
 
         // Redirect after short delay
         setTimeout(() => {
-          navigate("/")
-        }, 2000)
+          navigate("/");
+        }, 2000);
       } else {
-        const data = await response.json()
-        setFormErrors({ submit: data.message || "Failed to create task" })
+        const data = await response.json();
+        setFormErrors({ submit: data.message || "Failed to create task" });
       }
     } catch (error) {
-      console.error("Error creating task:", error)
-      setFormErrors({ submit: "Network error. Please try again." })
+      console.error("Error creating task:", error);
+      setFormErrors({ submit: "Network error. Please try again." });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="dashboard">
@@ -268,7 +259,9 @@ function AddTask() {
                     className={formErrors.title ? "error" : ""}
                     placeholder="Enter task title"
                   />
-                  {formErrors.title && <span className="error-message">{formErrors.title}</span>}
+                  {formErrors.title && (
+                    <span className="error-message">{formErrors.title}</span>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -299,7 +292,11 @@ function AddTask() {
                     className={formErrors.description ? "error" : ""}
                     placeholder="Describe the task in detail"
                   ></textarea>
-                  {formErrors.description && <span className="error-message">{formErrors.description}</span>}
+                  {formErrors.description && (
+                    <span className="error-message">
+                      {formErrors.description}
+                    </span>
+                  )}
                 </div>
 
                 <div className="form-row">
@@ -316,7 +313,14 @@ function AddTask() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <rect
+                          x="3"
+                          y="4"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        ></rect>
                         <line x1="16" y1="2" x2="16" y2="6"></line>
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
@@ -331,7 +335,11 @@ function AddTask() {
                       onChange={handleChange}
                       className={formErrors.deadline ? "error" : ""}
                     />
-                    {formErrors.deadline && <span className="error-message">{formErrors.deadline}</span>}
+                    {formErrors.deadline && (
+                      <span className="error-message">
+                        {formErrors.deadline}
+                      </span>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -397,13 +405,25 @@ function AddTask() {
                       </option>
                     ))}
                   </select>
-                  {formErrors.employee_email && <span className="error-message">{formErrors.employee_email}</span>}
+                  {formErrors.employee_email && (
+                    <span className="error-message">
+                      {formErrors.employee_email}
+                    </span>
+                  )}
                 </div>
 
-                {formErrors.submit && <div className="error-message submit-error">{formErrors.submit}</div>}
+                {formErrors.submit && (
+                  <div className="error-message submit-error">
+                    {formErrors.submit}
+                  </div>
+                )}
 
                 <div className="form-actions">
-                  <button type="button" className="cancel-btn" onClick={() => navigate("/")}>
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => navigate("/")}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="18"
@@ -420,7 +440,11 @@ function AddTask() {
                     </svg>
                     Cancel
                   </button>
-                  <button type="submit" className="submit-btn" disabled={isLoading}>
+                  <button
+                    type="submit"
+                    className="submit-btn"
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <>
                         <svg
@@ -438,11 +462,26 @@ function AddTask() {
                           <line x1="12" y1="2" x2="12" y2="6"></line>
                           <line x1="12" y1="18" x2="12" y2="22"></line>
                           <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
-                          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+                          <line
+                            x1="16.24"
+                            y1="16.24"
+                            x2="19.07"
+                            y2="19.07"
+                          ></line>
                           <line x1="2" y1="12" x2="6" y2="12"></line>
                           <line x1="18" y1="12" x2="22" y2="12"></line>
-                          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
-                          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+                          <line
+                            x1="4.93"
+                            y1="19.07"
+                            x2="7.76"
+                            y2="16.24"
+                          ></line>
+                          <line
+                            x1="16.24"
+                            y1="7.76"
+                            x2="19.07"
+                            y2="4.93"
+                          ></line>
                         </svg>
                         Creating...
                       </>
@@ -474,7 +513,7 @@ function AddTask() {
         </div>
       </section>
     </div>
-  )
+  );
 }
 
-export default AddTask
+export default AddTask;

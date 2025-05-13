@@ -1,9 +1,9 @@
 use master 
 GO
--- ALTER DATABASE Project_DB
--- SET SINGLE_USER
--- WITH ROLLBACK IMMEDIATE;
---GO
+ ALTER DATABASE Project_DB
+ SET SINGLE_USER
+ WITH ROLLBACK IMMEDIATE;
+GO
 
 -- ALTER DATABASE Project_DB
 -- SET MULTI_USER;
@@ -280,6 +280,11 @@ begin
 		
 		insert into Order_Assignments (order_id, employee_id, assigned_at, completed_at)
 		values (@order_id, @employee_id, DEFAULT, NULL);
+
+		UPDATE Admins
+        SET ordersAssigned = ordersAssigned + 1
+        WHERE admin_id = @admin_id;
+
 		return 1;
 	end try
 	begin catch
@@ -292,37 +297,75 @@ go
 --exec new_task 'Test Task 1.0', 'Description 1.0', '2025-05-10', 'High', 'Pending', 4, 'bilal.hassan@fast.edu.pk'
 
 go --update the task 
-create procedure update_status
-	@adminID int,
-    @new_status varchar(20),
-    @orderID int
+CREATE PROCEDURE update_status
+	@adminID INT,
+    @new_status VARCHAR(20),
+    @orderID INT
 AS
-begin
+BEGIN
+    DECLARE @assigned_admin INT;
+    DECLARE @employee_id INT;
+    DECLARE @current_status VARCHAR(20);
 
-	declare @assigned_admin int;
+    -- Check if the order exists and get admin
+    SELECT @assigned_admin = admin_id, @current_status = [status]
+    FROM Orders
+    WHERE order_id = @orderID;
 
-	select @assigned_admin = admin_id FROM Orders WHERE order_id = @orderID;
-	if @assigned_admin is null
-	begin
-	print 'Order id is not found'
-	return -1;
-	end
+    IF @assigned_admin IS NULL
+    BEGIN
+        PRINT 'Order ID not found.';
+        RETURN -1;
+    END
 
-	 if @assigned_admin <> @adminID
-	 begin
-	 print 'Access Denied: You can only update orders assigned by you.';
-	 return 0;
-	 end
+    IF @assigned_admin <> @adminID
+    BEGIN
+        PRINT 'Access Denied: You can only update orders assigned by you.';
+        RETURN 0;
+    END
 
+    -- Get employee assigned to this order
+    SELECT @employee_id = employee_id
+    FROM Order_Assignments
+    WHERE order_id = @orderID;
 
-    update Orders
-    set [status] = @new_status
-    where order_id = @orderID;
+    -- Update the status of the order
+    UPDATE Orders
+    SET [status] = @new_status
+    WHERE order_id = @orderID;
 
-    print 'Order status updated successfully';
-	return 1;
-end
-exec update_status 1, 'In Progress', 1
+    -- Update statistics based on new status
+    IF @new_status = 'In Progress'
+    BEGIN
+        UPDATE Employees
+        SET ordersAccepted = ordersAccepted + 1
+        WHERE employee_id = @employee_id;
+    END
+    ELSE IF @new_status = 'Cancelled'
+    BEGIN
+        UPDATE Employees
+        SET ordersCancelled = ordersCancelled + 1
+        WHERE employee_id = @employee_id;
+    END
+    ELSE IF @new_status = 'Completed'
+    BEGIN
+        DECLARE @deadline DATE;
+        SELECT @deadline = deadline FROM Orders WHERE order_id = @orderID;
+
+        -- Compare with current date to check lateness
+        IF GETDATE() > @deadline
+        BEGIN
+            UPDATE Employees
+            SET ordersSubmittedLate = ordersSubmittedLate + 1
+            WHERE employee_id = @employee_id;
+        END
+    END
+
+    PRINT 'Order status and related stats updated successfully.';
+    RETURN 1;
+END
+GO
+--exec update_status 1, 'In Progress', 1
 go
 
 create procedure update_priority
@@ -690,14 +733,78 @@ BEGIN
     WHERE infoID = @infoID;
 END;
 go
+--DROP PROCEDURE IF EXISTS getNonAdminEmployees;
+--GO
+
 CREATE PROCEDURE getNonAdminEmployees
 AS
 BEGIN
-    select E. employee_id, P.email from Employees E
-	join PersonnelInfo P on E.infoID= P.infoID
-END
+    SET NOCOUNT ON;
 
-Exec getNonAdminEmployees
+    SELECT E.employee_id, P.email 
+    FROM Employees E
+    JOIN PersonnelInfo P ON E.infoID = P.infoID;
+END;
+GO
+
+
+--Exec getNonAdminEmployees
+--EXEC sp_helptext 'getNonAdminEmployees';
+
+GO
+CREATE PROCEDURE DeleteOrderAndUpdateStats
+    @order_id INT,
+    @admin_id INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Step 1: Decrement ordersAssigned for the given admin_id
+        UPDATE Admins
+        SET ordersAssigned = ordersAssigned - 1
+        WHERE admin_id = @admin_id AND ordersAssigned > 0;
+
+        -- Step 2: Check if the order is 'In Progress'
+        DECLARE @order_status VARCHAR(20);
+        SELECT @order_status = [status]
+        FROM Orders
+        WHERE order_id = @order_id;
+
+        -- Step 2.1: If 'In Progress', decrement the employee's ordersAccepted
+        IF @order_status = 'In Progress'
+        BEGIN
+            DECLARE @employee_id INT;
+
+            SELECT @employee_id = employee_id
+            FROM Order_Assignments
+            WHERE order_id = @order_id;
+
+            IF @employee_id IS NOT NULL
+            BEGIN
+                UPDATE Employees
+                SET ordersAccepted = ordersAccepted - 1
+                WHERE employee_id = @employee_id AND ordersAccepted > 0;
+            END
+        END
+
+        -- Step 3: Delete the order (Order_Assignments will be deleted due to ON DELETE CASCADE)
+        DELETE FROM Orders
+        WHERE order_id = @order_id;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        ROLLBACK;
+        THROW;
+    END CATCH
+END;
+
+GO
+--EXEC DeleteOrderAndUpdateStats @order_id = 30, @admin_id = 1;
+
 
 
 -- TRIGGER : Prevent deletion of PersonnelInfo
