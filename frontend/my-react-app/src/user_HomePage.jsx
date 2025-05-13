@@ -7,7 +7,7 @@ function User_HomePage() {
   const [showFilter, setShowFilter] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState({
     pending: false,
-    inProgress: false
+    inProgress: false,
   });
   const [isNavbarOpen, setIsNavbarOpen] = useState(false);
   const [tasks, setTasks] = useState([]); // State to store tasks
@@ -19,7 +19,7 @@ function User_HomePage() {
   const handleFilterChange = (filter) => {
     setSelectedFilters((prevFilters) => ({
       ...prevFilters,
-      [filter]: !prevFilters[filter]
+      [filter]: !prevFilters[filter],
     }));
   };
 
@@ -55,35 +55,41 @@ function User_HomePage() {
           "http://localhost:5000/api/tasks/employee/search/status";
       }
 
-      const [res1, res2] = await Promise.all([
-        fetch(urlPending),
-        fetch(urlInProgress)
-      ]);
-      const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+      const fetchUrls = [];
 
-      const transformedTasks1 = Array.isArray(data1)
-        ? data1.map((task, i) => ({
-            title: task.title || `Task ${i + 1}`,
-            orderID: `Order ID ${task.order_id || i + 1}`,
-            status: task.status || "unknown",
-            priority: task.priority || "low",
-            description: task.description || "No description"
-          }))
-        : [];
+      if (
+        selectedFilters.pending ||
+        (!selectedFilters.pending && !selectedFilters.inProgress)
+      ) {
+        fetchUrls.push(fetch(urlPending));
+      }
 
-      const transformedTasks2 = Array.isArray(data2)
-        ? data2.map((task, i) => ({
-            title: task.title || `Task ${i + 1}`,
-            orderID: `Order ID ${task.order_id || i + 1}`,
-            status: task.status || "unknown",
-            priority: task.priority || "low",
-            description: task.description || "No description" // Added description field
-          }))
-        : [];
+      if (
+        selectedFilters.inProgress ||
+        (!selectedFilters.pending && !selectedFilters.inProgress)
+      ) {
+        fetchUrls.push(fetch(urlInProgress));
+      }
 
-      // Combine and sort tasks by orderID
-      const combinedTasks = [...transformedTasks1, ...transformedTasks2];
-      combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID)); // Sorting tasks by orderID
+      const responses = await Promise.all(fetchUrls);
+      const dataArray = await Promise.all(responses.map((res) => res.json()));
+
+      // Combine and transform data
+      let combinedTasks = [];
+      dataArray.forEach((data, index) => {
+        const transformed = Array.isArray(data)
+          ? data.map((task, i) => ({
+              title: task.title || `Task ${i + 1}`,
+              orderID: `Order ID ${task.order_id || i + 1}`,
+              status: task.status || "unknown",
+              priority: task.priority || "low",
+              description: task.description || "No description",
+            }))
+          : [];
+        combinedTasks = combinedTasks.concat(transformed);
+      });
+
+      combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
       setTasks(combinedTasks);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -106,8 +112,8 @@ function User_HomePage() {
           headers: {
             "Content-Type": "application/json",
             userId: user,
-            userRole: userRole
-          }
+            userRole: userRole,
+          },
         }
       );
 
@@ -125,6 +131,11 @@ function User_HomePage() {
     fetchTasks();
     fetchUserLastName(); // Fetch the last name when the page loads
   }, []);
+
+  useEffect(() => {
+    fetchTasks(); // Re-fetch when filters change
+    fetchUserLastName();
+  }, [selectedFilters]);
 
   // Monitor navbar hover state
   useEffect(() => {
