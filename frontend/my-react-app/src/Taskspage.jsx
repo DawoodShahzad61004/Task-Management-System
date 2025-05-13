@@ -95,6 +95,7 @@ function TasksPage() {
         // Only combine Pending and In Progress for non-admin
         combinedTasks = [...transformTasks(data1), ...transformTasks(data2)];
       }
+      
       combinedTasks.sort((a, b) => a.orderID.localeCompare(b.orderID));
       setTasks(combinedTasks);
     } catch (error) {
